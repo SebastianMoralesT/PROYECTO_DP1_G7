@@ -61,7 +61,6 @@ public class RoutingService {
      * Ejecuta el SA con los datos ya cargados y los pedidos/camiones de la petición.
      */
     public Solucion optimize() throws IOException{
-        System.out.println("Ingreso aquí");
         LocalDateTime ahora = LocalDateTime.now()
                 .withDayOfMonth(1)
                 .withHour(0)
@@ -72,9 +71,6 @@ public class RoutingService {
         ArrayList<Pedido> pedidos = cargarPedidos("data/pedidos.txt");
         ArrayList<Camion> camiones = cargarCamiones("data/camiones.txt");
         ArrayList<Bloqueo> bloqueos = cargarBloqueos("data/bloqueos.txt");
-        for(Bloqueo bloq : bloqueos){
-            System.out.println("El inicio del bloqueo es: "+bloq.getInicio());
-        }
         ArrayList<Mantenimiento> mantenimientos = cargarMantenimientos("data/mantenimiento.txt");
 
         ArrayList<Planta> plantas = obtenerPlantas();
@@ -171,7 +167,12 @@ public class RoutingService {
         ArrayList<Bloqueo> bloqueos = new ArrayList<>();
         Path path = Paths.get(filePath);
         // Base temporal: primer día del mes actual a las 00:00
-        
+        LocalDateTime base = LocalDateTime.now()
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
         for (String line : Files.readAllLines(path)) {
             if (line.isBlank())
                 continue;
@@ -189,8 +190,6 @@ public class RoutingService {
             }
             bloqueos.add(new Bloqueo(nodos, start, end));
         }
-        
-
         return bloqueos;
     }
 

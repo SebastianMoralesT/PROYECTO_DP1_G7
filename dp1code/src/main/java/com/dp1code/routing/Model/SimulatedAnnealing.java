@@ -50,20 +50,20 @@ public class SimulatedAnnealing {
             ArrayList<Bloqueo> bloqueos,
             ArrayList<Mantenimiento> mantenimientos,
             LocalDateTime now) {
-            //Solucion current = simularPedidosEnTiempoReal(pedidos, camiones, now);
+            Solucion current = simularPedidosEnTiempoReal(pedidos, camiones, now);
 
-            //return current;
-        Solucion current = initialSolution(pedidos, camiones, now);
+            return current;
+        /*Solucion current = initialSolution(pedidos, camiones, now);
         Solucion best = current;
         double temp = initialTemp;
 
         for (int i = 0; i < maxIterations; i++) {
             Solucion neighbor = neighborSolution(current, now);
-            
-             double costC = cost(current);
-             double costN = cost(neighbor);
-             
-            double fitC = fitness(current);
+            /*
+             * double costC = cost(current);
+             * double costN = cost(neighbor);
+             */
+            /*double fitC = fitness(current);
             double fitN = fitness(neighbor);
             if (fitN > fitC || Math.exp((fitN - fitC) / temp) > random.nextDouble()) {
                 current = neighbor;
@@ -74,7 +74,7 @@ public class SimulatedAnnealing {
             }
             temp *= (1 - coolingRate);
         }
-        return best;
+        return best;*/
     }
 
     /**
@@ -108,7 +108,6 @@ public class SimulatedAnnealing {
             }
 
             // Espera mínima de 4 h tras horaPedido
-            System.out.println("La hora de pedido es: "+p.getHoraPedido());
             LocalDateTime earliest = p.getHoraPedido().plusHours(4);
             if (t.isBefore(earliest)) {
                 t = earliest;
@@ -578,7 +577,6 @@ public class SimulatedAnnealing {
             LocalDateTime tInicio = reloj;
 
             // 3.D.a) Espera mínima de 4 h:
-            System.out.println("El getHoraPedido de los pedidos es: " + p.getHoraPedido());
             LocalDateTime earliest = p.getHoraPedido().plusHours(4);
             if (tInicio.isBefore(earliest))
                 tInicio = earliest;
@@ -604,14 +602,10 @@ public class SimulatedAnnealing {
                 LocalDateTime t0 = tInicio;
                 tiemposRec.add(t0);
                 for (int i = 1; i < trajRec.size(); i++) {
-                    
                     double d = distance(trajRec.get(i - 1), trajRec.get(i));
-                    
                     double horas = d / SPEED_KMH;
-                    
                     long H = (long) horas;
                     long M = (long) ((horas - H) * 60);
-                    
                     t0 = t0.plusHours(H).plusMinutes(M);
                     tiemposRec.add(t0);
                 }
@@ -635,7 +629,11 @@ public class SimulatedAnnealing {
             LocalDateTime t1 = tInicio;
             tiemposEnt.add(t1);
             for (int i = 1; i < trajEnt.size(); i++) {
-                t1 = t1.plusSeconds(72);
+                double d = distance(trajEnt.get(i - 1), trajEnt.get(i));
+                double horas = d / SPEED_KMH;
+                long H = (long) horas;
+                long M = (long) ((horas - H) * 60);
+                t1 = t1.plusHours(H).plusMinutes(M);
                 tiemposEnt.add(t1);
             }
             LocalDateTime tFinEnt = tiemposEnt.get(tiemposEnt.size() - 1);

@@ -130,7 +130,7 @@ export default function SimulationMap() {
     trucksProgressRef.current = routes.map((subRutas, index) => {
       const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
       const firstRoute = subRutas[0]?.trayectoria || [];
-      console.log("La subRuta, la hora de inicio es: "+ subRutas[0]?.horaInicio+ " en el nodo: "+subRutas[0]?.trayectoria);
+
       return {
         currentStep: 0,
         progress: 0,
