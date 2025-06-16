@@ -53,6 +53,9 @@ public class RoutingApplication {
         ArrayList<Pedido> pedidos = cargarPedidos("data/pedidos.txt");
         ArrayList<Camion> camiones = cargarCamiones("data/camiones.txt");
         ArrayList<Bloqueo> bloqueos = cargarBloqueos("data/bloqueos.txt");
+        for(Bloqueo bloq : bloqueos){
+            System.out.println("El inicio del bloqueo es: "+bloq.getInicio());
+        }
         ArrayList<Mantenimiento> mantenimientos = cargarMantenimientos("data/mantenimiento.txt");
 
         ArrayList<Planta> plantas = obtenerPlantas();
@@ -137,7 +140,7 @@ public class RoutingApplication {
             int d = Integer.parseInt(ts[0]);
             int h = Integer.parseInt(ts[1]);
             int m = Integer.parseInt(ts[2]);
-            LocalDateTime horaPedido = base.plusDays(d).plusHours(h).plusMinutes(m);
+            LocalDateTime horaPedido = base.plusDays(d-1).plusHours(h).plusMinutes(m);
             // Datos restantes
             String[] vals = parts[1].trim().split(",");
             int x = Integer.parseInt(vals[0]);
@@ -190,12 +193,7 @@ public class RoutingApplication {
         ArrayList<Bloqueo> bloqueos = new ArrayList<>();
         Path path = Paths.get(filePath);
         // Base temporal: primer día del mes actual a las 00:00
-        LocalDateTime base = LocalDateTime.now()
-                .withDayOfMonth(1)
-                .withHour(0)
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0);
+        
         for (String line : Files.readAllLines(path)) {
             if (line.isBlank())
                 continue;
@@ -262,7 +260,7 @@ public class RoutingApplication {
         int hora = Integer.parseInt(partes[1]);
         int minuto = Integer.parseInt(partes[2]);
 
-        return LocalDateTime.of(2025, Month.MAY, dia, hora, minuto, 0, 0);
+        return LocalDateTime.of(2025, Month.JUNE, dia, hora, minuto, 0, 0);
     }
 
     @Bean
