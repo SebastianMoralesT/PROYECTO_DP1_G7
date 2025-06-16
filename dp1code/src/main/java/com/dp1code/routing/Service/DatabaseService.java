@@ -2,8 +2,13 @@ package com.dp1code.routing.Service;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+
+
+import com.dp1code.routing.Model.Camion;
+import com.dp1code.routing.Model.Pedido;
 
 public class DatabaseService {
     // JDBC URL apuntando a tu esquema SISTEMA_DE_CAMIONES en RDS
@@ -71,6 +76,78 @@ public class DatabaseService {
         }
     }
 
+    public static Camion obtenerCamionPorCodigo(String codigoCamion) {
+        String sql = """
+            SELECT codigo, capacidadMaxima, glActual, enRuta,
+                    disponibleDesde, horaLibre, UbicacionActual
+            FROM Camion
+            WHERE codigo = ?
+            """;
+
+        try (Connection conn = getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, codigoCamion);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                Camion camion = new Camion();
+                camion.setCodigo(rs.getString("codigo"));
+                camion.setCapacidadMaxima(rs.getDouble("capacidadMaxima"));
+                camion.setGlpActual(rs.getDouble("glActual"));
+                camion.setEnRuta(rs.getBoolean("enRuta"));
+                camion.setDisponibleDesde(rs.getTimestamp("disponibleDesde").toLocalDateTime());
+                camion.setHoraLibre(rs.getTimestamp("horaLibre").toLocalDateTime());
+                return camion;
+            } else {
+                System.err.println("No se encontró ningún camión con código: " + codigoCamion);
+                return null;
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error al consultar el camión:");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Pedido obtenerPedidoPorCodigo(String codigoPedido) {
+        String sql = """
+            SELECT idPedido, codigo, cantidadGlp, horaPedido, plazoMaximoEntrega,
+                tiempoDescarga, codCliente, destino
+            FROM Pedido
+            WHERE codigo = ?
+        """;
+
+        try (Connection conn = getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, codigoPedido);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                Pedido pedido = new Pedido();
+                pedido.setId(rs.getString("codigo"));
+                pedido.setCantidadGlp(rs.getDouble("cantidadGlp"));
+                pedido.setHoraPedido(rs.getTimestamp("horaPedido").toLocalDateTime());
+                pedido.setPlazoMaximoEntrega(rs.getTimestamp("plazoMaximoEntrega").toLocalDateTime());
+                pedido.setTiempoDescarga(rs.getTimestamp("tiempoDescarga").toLocalDateTime());
+                pedido.setIdCliente(rs.getString("codCliente"));
+
+                return pedido;
+            } else {
+                System.err.println("No se encontró ningún pedido con código: " + codigoPedido);
+                return null;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al consultar el pedido:");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     /**
      * Método main de prueba: crea un pedido ejemplo y lo inserta.
      */
@@ -78,8 +155,9 @@ public class DatabaseService {
         // Objeto: Pedido (Atributos)
         // Funcion(objetio.atributo, objetivo.atrivutp2)
         // SpingBoot:
+        /* 
         registrarPedido(
-            4,
+            5,
             "PED-20230614-001",
             150.75,
             LocalDateTime.parse("2025-06-14T08:30:00"),
@@ -87,9 +165,28 @@ public class DatabaseService {
             LocalDateTime.parse("2025-06-14T00:00:45"),
             "CLI-001",
             101
-        );
+        );*/
 
-        // GET: variable = FUNCUION()
-        // variable.cliente = RESULTADO
+        /*
+        Camion camion = obtenerCamionPorCodigo("CAM-001");
+
+        if (camion != null) {
+            System.out.println("Código: " + camion.getCodigo());
+            System.out.println("Capacidad Máxima: " + camion.getCapacidadMaxima());
+            System.out.println("GLP Actual: " + camion.getGlpActual());
+            System.out.println("¿Está en ruta?: " + (camion.isEnRuta() ? "Sí" : "No"));
+            System.out.println("Disponible desde: " + camion.getDisponibleDesde());
+            System.out.println("Hora libre: " + camion.getHoraLibre());
+        }*/
+
+        Pedido pedido = obtenerPedidoPorCodigo("PED-20230614-001");
+
+        if (pedido != null) {
+            System.out.println("Pedido ID: " + pedido.getId());
+            System.out.println("Código: " + pedido.getIdCliente());
+            System.out.println("Cantidad GLP: " + pedido.getCantidadGlp());
+            System.out.println("Hora Pedido: " + pedido.getHoraPedido());
+            System.out.println("Plazo máximo: " + pedido.getPlazoMaximoEntrega());
+        }
     }
 }
