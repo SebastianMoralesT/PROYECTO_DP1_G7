@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FiChevronDown, FiChevronUp, FiX } from "react-icons/fi";
 
 export default function Legend() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (

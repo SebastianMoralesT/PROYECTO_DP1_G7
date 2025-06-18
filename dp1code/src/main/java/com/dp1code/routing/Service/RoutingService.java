@@ -72,9 +72,6 @@ public class RoutingService {
         ArrayList<Pedido> pedidos = cargarPedidos("data/pedidos.txt");
         ArrayList<Camion> camiones = cargarCamiones("data/camiones.txt");
         ArrayList<Bloqueo> bloqueos = cargarBloqueos("data/bloqueos.txt");
-        for(Bloqueo bloq : bloqueos){
-            System.out.println("El inicio del bloqueo es: "+bloq.getInicio());
-        }
         ArrayList<Mantenimiento> mantenimientos = cargarMantenimientos("data/mantenimiento.txt");
 
         ArrayList<Planta> plantas = obtenerPlantas();
@@ -240,6 +237,8 @@ public class RoutingService {
         int hora = Integer.parseInt(partes[1]);
         int minuto = Integer.parseInt(partes[2]);
 
-        return LocalDateTime.of(2025, Month.MAY, dia, hora, minuto, 0, 0);
+        return LocalDateTime.of(2025, Month.JUNE, dia, hora, minuto, 0, 0);
     }
+
+    
 }

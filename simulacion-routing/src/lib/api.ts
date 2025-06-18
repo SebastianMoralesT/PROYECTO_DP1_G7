@@ -54,7 +54,11 @@ export interface RutaCamion {
   subRutas: SubRuta[];
 }
 
-
+export interface Bloqueo{
+  nodos: Ubicacion[];
+  inicio: string;
+  fin: string;
+}
 
 export async function obtenerRutasOptimizadas(): Promise<RutaCamion[]> {
   try {
@@ -113,6 +117,25 @@ export async function obtenerCamiones(): Promise<Camion[]> {
     }
 
     const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching optimized routes:', error);
+    throw error;
+  }
+}
+
+export async function obtenerBloqueos(): Promise<Bloqueo[]> {
+  console.log('Iniciando obtención de bloqueos...');
+  try {
+    
+    const response = await fetch('http://localhost:8080/api/routing/obtenerBloqueos', { method: 'POST' });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(data)
     return data;
   } catch (error) {
     console.error('Error fetching optimized routes:', error);

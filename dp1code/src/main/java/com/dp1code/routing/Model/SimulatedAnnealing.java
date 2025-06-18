@@ -108,7 +108,6 @@ public class SimulatedAnnealing {
             }
 
             // Espera mínima de 4 h tras horaPedido
-            System.out.println("La hora de pedido es: "+p.getHoraPedido());
             LocalDateTime earliest = p.getHoraPedido().plusHours(4);
             if (t.isBefore(earliest)) {
                 t = earliest;

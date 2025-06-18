@@ -53,9 +53,6 @@ public class RoutingApplication {
         ArrayList<Pedido> pedidos = cargarPedidos("data/pedidos.txt");
         ArrayList<Camion> camiones = cargarCamiones("data/camiones.txt");
         ArrayList<Bloqueo> bloqueos = cargarBloqueos("data/bloqueos.txt");
-        for(Bloqueo bloq : bloqueos){
-            System.out.println("El inicio del bloqueo es: "+bloq.getInicio());
-        }
         ArrayList<Mantenimiento> mantenimientos = cargarMantenimientos("data/mantenimiento.txt");
 
         ArrayList<Planta> plantas = obtenerPlantas();

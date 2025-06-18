@@ -3,6 +3,7 @@ package com.dp1code.routing.Controller;
 import com.dp1code.routing.Model.Solucion;
 import com.dp1code.routing.Model.Pedido;
 import com.dp1code.routing.Model.Camion;
+import com.dp1code.routing.Model.Bloqueo;
 import com.dp1code.routing.Model.Planta;
 import com.dp1code.routing.Service.RoutingService;
 
@@ -48,6 +49,12 @@ public class RoutingController {
     public ArrayList<Camion> obtenerCamiones() throws IOException {
         return routingService.cargarCamiones("data/camiones.txt"); 
     }
+
+    @PostMapping("/obtenerBloqueos")
+    public ArrayList<Bloqueo> obtenerBloqueos() throws IOException {
+        return routingService.cargarBloqueos("data/bloqueos.txt"); 
+    }
+
 
     // Registrar un pedido:
     

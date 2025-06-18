@@ -3,8 +3,8 @@
 
 import { BsPlayFill, BsStopFill } from "react-icons/bs";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { obtenerRutasOptimizadas, obtenerPedidos, obtenerPlantas } from "../../lib/api";
-import type { Camion, SubRuta, Ubicacion, Planta, Pedido } from '../../lib/api';
+import { obtenerRutasOptimizadas, obtenerPedidos, obtenerPlantas, obtenerBloqueos } from "../../lib/api";
+import type { Camion, SubRuta, Ubicacion, Planta, Pedido, Bloqueo } from '../../lib/api';
 import { useSimTime } from "@/components/weekly/TimeContext";
 
 export default function SimulationMap() {
@@ -34,6 +34,7 @@ export default function SimulationMap() {
   const [trucks, setTrucks] = useState<Camion[]>([]);
   const [plants, setPlants] = useState<Planta[]>([]);
   const [orders, setOrders] = useState<Pedido[]>([]);
+  const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
   const [routes, setRoutes] = useState<SubRuta[][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +54,11 @@ export default function SimulationMap() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [rutasOptimizadas, pedidos, plantas] = await Promise.all([
+        const [rutasOptimizadas, pedidos, plantas, bloqueosObtenidos] = await Promise.all([
           obtenerRutasOptimizadas(),
           obtenerPedidos(),
-          obtenerPlantas()
+          obtenerPlantas(),
+          obtenerBloqueos()
         ]);
 
         // Procesar camiones y rutas
@@ -68,6 +70,7 @@ export default function SimulationMap() {
         setRoutes(subRutas);
         setOrders(pedidos);
         setPlants(plantas);
+        setBloqueos(bloqueosObtenidos);
         setLoading(false);
       } catch (err) {
         setError('Error al cargar los datos de rutas');
@@ -122,6 +125,51 @@ export default function SimulationMap() {
 
     loadImages();
   }, []);
+
+  const drawBloqueos = useCallback((
+  ctx: CanvasRenderingContext2D,
+  spacing: number,
+  currentTime: Date
+) => {
+  if (!bloqueos || bloqueos.length === 0) return;
+
+  const ahora = currentTime.getTime();
+  const bloqueosActivos = bloqueos.filter(bloqueo => {
+    try {
+      const inicio = new Date(bloqueo.inicio).getTime();
+      const fin = new Date(bloqueo.fin).getTime();
+      return ahora >= inicio && ahora <= fin;
+    } catch (e) {
+      console.error('Error procesando fechas de bloqueo:', e);
+      return false;
+    }
+  });
+
+  bloqueosActivos.forEach(bloqueo => {
+    const nodos = bloqueo.nodos;
+    if (nodos.length < 2) return; // No se puede dibujar una línea con menos de 2 nodos
+
+    ctx.save();
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+
+    const startX = nodos[0].posX * spacing;
+    const startY = nodos[0].posY * spacing;
+    ctx.moveTo(startX, startY);
+
+    for (let i = 1; i < nodos.length; i++) {
+      const x = nodos[i].posX * spacing;
+      const y = nodos[i].posY * spacing;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+  });
+}, [bloqueos]);
+
+
 
   // Inicializar posiciones cuando los datos estén listos
   useEffect(() => {
@@ -370,7 +418,7 @@ export default function SimulationMap() {
     lastTimeRef.current = timestamp;
 
     drawGrid(ctx, cols, rows, spacing);
-
+    drawBloqueos(ctx, spacing, simTimeRef.current);
     if (hoveredPlant && ctx) {
       drawPlantTooltip(ctx, hoveredPlant, tooltipPosition.x, tooltipPosition.y);
     }
@@ -447,7 +495,7 @@ export default function SimulationMap() {
       allTrucksFinished = false;
 
       progressData.progress += deltaTime / 1000;
-      const transitionDuration = 1.2;
+      const transitionDuration = 8;
 
       if (progressData.progress >= transitionDuration) {
         progressData.progress = 0;
@@ -504,7 +552,7 @@ export default function SimulationMap() {
     ctx.scale(1, -1);
 
     drawGrid(ctx, cols, rows, spacing);
-
+    drawBloqueos(ctx, spacing, simTimeRef.current);
     // Dibujar plantas
     plants.forEach(plant => {
       drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
