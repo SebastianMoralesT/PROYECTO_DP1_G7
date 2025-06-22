@@ -62,7 +62,9 @@ public class PathFinder {
                 int ny = u.getPosY() + dys[k];
                 if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
                 Nodo v = new Nodo(nx, ny);
-                if (closed.contains(v) || isBlocked(v, bloqueos, t)) continue;
+                if (closed.contains(v) || isBlocked(v, bloqueos, t)) {
+                    continue;
+                };
                 int tentativeG = gScore.get(u) + 1;
                 if (tentativeG < gScore.getOrDefault(v, Integer.MAX_VALUE)) {
                     cameFrom.put(v, u);
@@ -75,6 +77,7 @@ public class PathFinder {
 
         // No se encontró ruta dentro del bounding -> devolvemos solo el destino
         ArrayList<Nodo> single = new ArrayList<>();
+        System.out.println("No se pudo encontrar camino estable");
         single.add(goal);
         return single;
     }
@@ -95,9 +98,12 @@ public class PathFinder {
 
     private static boolean isBlocked(Nodo n, List<Bloqueo> bloqueos, LocalDateTime t) {
         for (Bloqueo b : bloqueos) {
-            if (!t.isBefore(b.getInicio()) && !t.isAfter(b.getFin())
-                    && b.getNodos().contains(n)) {
-                return true;
+            if (!t.isBefore(b.getInicio()) && !t.isAfter(b.getFin())) {
+                for (Nodo blockedNode : b.getNodos()) {
+                    if (blockedNode.getPosX() == n.getPosX() && blockedNode.getPosY() == n.getPosY()) {
+                        return true;
+                    }
+                }
             }
         }
         return false;

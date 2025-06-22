@@ -61,7 +61,7 @@ public class RoutingService {
      * Ejecuta el SA con los datos ya cargados y los pedidos/camiones de la petición.
      */
     public Solucion optimize() throws IOException{
-        System.out.println("Ingreso aquí");
+        
         LocalDateTime ahora = LocalDateTime.now()
                 .withDayOfMonth(1)
                 .withHour(0)

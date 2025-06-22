@@ -54,6 +54,7 @@ public class SimulatedAnnealing {
 
             //return current;
         Solucion current = initialSolution(pedidos, camiones, now);
+        System.out.println("El costo de current es: "+cost(current));
         Solucion best = current;
         double temp = initialTemp;
 

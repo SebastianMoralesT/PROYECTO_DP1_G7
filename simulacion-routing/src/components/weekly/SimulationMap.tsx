@@ -434,12 +434,12 @@ export default function SimulationMap() {
     });
 
     // Dibujar rutas de los camiones
-    /*routes.forEach((subRutas, index) => {
+    routes.forEach((subRutas, index) => {
       const color = `hsl(${(index * 30) % 360}, 70%, 50%)`;
       subRutas.forEach(subRuta => {
         drawRoute(ctx, subRuta.trayectoria, color, spacing);
       });
-    });*/
+    });
 
     let allTrucksFinished = true;
 

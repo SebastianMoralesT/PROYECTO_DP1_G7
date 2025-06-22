@@ -24,15 +24,15 @@ public class Nodo {
     public void setBloqueado(boolean bloqueado) { this.bloqueado = bloqueado; }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Nodo)) return false;
-        Nodo n = (Nodo) o;
-        return this.posX == n.posX && this.posY == n.posY;
-    }
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Nodo nodo = (Nodo) o;
+    return posX == nodo.posX && posY == nodo.posY;
+}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(posX, posY);
-    }
+@Override
+public int hashCode() {
+    return Objects.hash(posX, posY);
+}
 }
