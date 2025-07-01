@@ -6,7 +6,7 @@ export default function StatusBar() {
   const [tiempoReal, setTiempoReal] = useState<Date | null>(null);
   const [tiempoSimulacion, setTiempoSimulacion] = useState<Date | null>(null);
   const [vehiculos, setVehiculos] = useState(20);
-  const [pedidosEntregados, setPedidosEntregados] = useState({ entregados: 20, total: 722 });
+  const [pedidosEntregados, setPedidosEntregados] = useState({ entregados: 0, total: 3});
 
   useEffect(() => {
     const now = new Date();

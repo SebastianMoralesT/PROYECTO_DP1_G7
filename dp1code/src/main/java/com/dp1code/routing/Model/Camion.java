@@ -5,26 +5,86 @@ import java.util.List;
 
 public class Camion {
     private String codigo;
+    private String tipo;
+    private double pesoVacio;
     private Nodo ubicacionActual;
     private double capacidadMaxima;
     private double glpActual;
+    private double glpTanque;
     private boolean enRuta;
     private LocalDateTime disponibleDesde;
     private LocalDateTime horaLibre;   // instante en que terminará la subruta en curso
     private List<SubRuta> subRutasExistentes;
+    private List<TimeRange> mantenimientos;
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public double getPesoVacio() {
+        return pesoVacio;
+    }
+
+    public void setPesoVacio(double pesoVacio) {
+        this.pesoVacio = pesoVacio;
+    }
+    public List<TimeRange> getMantenimientos() {
+        return mantenimientos;
+    }
+    public double getGlpTanque() {
+        return glpTanque;
+    }
+
+    public void setGlpTanque(double glpTanque) {
+        this.glpTanque = glpTanque;
+    }
+
+    public void setMantenimientos(List<TimeRange> mantenimientos) {
+        this.mantenimientos = mantenimientos;
+    }
 
     public Camion() {}
 
-    public Camion(String codigo, Nodo ubicacionActual, double capacidadMaxima,
-                  double glpActual, boolean enRuta, LocalDateTime disponibleDesde) {
+    public Camion(String codigo, String tipo, Nodo ubicacionActual, boolean enRuta, LocalDateTime disponibleDesde) {
         this.codigo = codigo;
+        this.tipo = tipo;
         this.ubicacionActual = ubicacionActual;
-        this.capacidadMaxima = capacidadMaxima;
-        this.glpActual = glpActual;
         this.enRuta = enRuta;
         this.disponibleDesde = disponibleDesde;
+        this.glpTanque=25;
+        AsignarCaracteristicasFlota(tipo);
     }
 
+    private void AsignarCaracteristicasFlota(String tipo) {
+        switch (tipo) {
+            case "TA":
+                this.pesoVacio=2.5;
+                this.capacidadMaxima=25;
+                this.glpActual=25;
+                break;
+            case "TB":
+                this.pesoVacio=2;
+                this.capacidadMaxima=15;
+                this.glpActual=15;
+                break;
+            case "TC":
+                this.pesoVacio=1.5;
+                this.capacidadMaxima=10;
+                this.glpActual=10;
+                break;
+            case "TD":
+                this.pesoVacio=1;
+                this.capacidadMaxima=05;
+                this.glpActual=05;
+                break;
+            default:
+                System.out.println("Se ha ingresado mal los tipos de camiones.");
+        }
+    }
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
 
@@ -48,4 +108,16 @@ public class Camion {
 
     public List<SubRuta> getSubRutasExistentes() { return subRutasExistentes; }
     public void setSubRutasExistentes(List<SubRuta> s) { this.subRutasExistentes = s; }
+
+    public boolean isDisponiblePorMantenimiento(LocalDateTime fechaHora) {
+        if (this.mantenimientos != null) {
+            for (TimeRange mantenimiento : this.mantenimientos) {
+                if (mantenimiento.contains(fechaHora)) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
 }

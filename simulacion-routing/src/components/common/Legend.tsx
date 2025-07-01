@@ -1,7 +1,7 @@
 // components/common/Legend.tsx
 'use client';
 import { useState } from "react";
-import { FiChevronDown, FiChevronUp, FiX } from "react-icons/fi";
+import { FiChevronUp, FiX } from "react-icons/fi";
 
 export default function Legend() {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,12 +44,24 @@ export default function Legend() {
           <ul className="text-xs space-y-1">
             <li className="flex items-center"><span className="mr-2">🚚</span> {isExpanded && 'Camión en tránsito'}</li>
             <li className="flex items-center"><span className="mr-2">🚧</span> {isExpanded && 'Camión averiado'}</li>
-            <li className="flex items-center"><span className="mr-2">📍</span> {isExpanded && 'Punto de entrega'}</li>
+            <li className="flex items-center">
+                <img src="pedido.png" alt="Punto" className="w-5 h-5 mr-2" />
+                {isExpanded && 'Punto de entrega'}
+            </li>
+
             {isExpanded && (
               <>
-                <li className="flex items-center"><span className="mr-2">🏭</span> Tanque Principal</li>
-                <li className="flex items-center"><span className="mr-2">🛢️</span> Tanque Intermedio</li>
-                <li className="flex items-center"><span className="mr-2">🛑</span> Bloqueo de ruta</li>
+                <li className="flex items-center">
+                    <img src="plantaPrincipal.png" alt="Tanque" className="w-5 h-5 mr-2" />
+                    Tanque Principal
+                </li>
+
+                <li className="flex items-center">
+                    <img src="plantaSecundaria.png" alt="Tanque Intermedio" className="w-5 h-5 mr-2" />
+                    Tanque Intermedio
+                </li>
+
+                <li className="flex items-center"><span className="mr-2">▀▀</span> Bloqueo de ruta</li>
               </>
             )}
           </ul>

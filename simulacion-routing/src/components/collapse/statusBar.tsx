@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSimTime } from "@/components/weekly/TimeContext";
+import { useSimTime } from "@/components/collapse/TimeContext";
 
 export default function StatusBar() {
   const [tiempoReal, setTiempoReal] = useState<Date | null>(null);

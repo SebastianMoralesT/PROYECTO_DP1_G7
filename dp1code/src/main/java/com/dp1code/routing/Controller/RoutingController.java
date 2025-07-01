@@ -6,19 +6,17 @@ import com.dp1code.routing.Model.Camion;
 import com.dp1code.routing.Model.Bloqueo;
 import com.dp1code.routing.Model.Planta;
 import com.dp1code.routing.Service.RoutingService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 // Los imports de Spring Web:
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
@@ -32,12 +30,24 @@ public class RoutingController {
     }
     @PostMapping("/optimize")
     public Solucion optimize() throws IOException {
-        return routingService.optimize(); // o con parámetros, según corresponda
+        LocalDateTime ahora = LocalDateTime.now()
+                .withDayOfMonth(25)
+                .withHour(12)
+                .withMinute(53)
+                .withSecond(20)
+                .withNano(0);
+        return routingService.optimize(ahora);
     }
 
-    @PostMapping("/obtenerPedidos")
+    @PostMapping("/obtenerPedidos") 
     public ArrayList<Pedido> obtenerPedidos() throws IOException {
-        return routingService.cargarPedidos("data/pedidos.txt"); 
+        LocalDateTime now = LocalDateTime.now()
+                .withDayOfMonth(25)
+                .withHour(12)
+                .withMinute(53)
+                .withSecond(20)
+                .withNano(0);
+        return routingService.cargarPedidosSegmentado("data/pedidos.txt", now); 
     }
 
     @PostMapping("/obtenerPlantas")
@@ -47,12 +57,18 @@ public class RoutingController {
 
     @PostMapping("/obtenerCamiones")
     public ArrayList<Camion> obtenerCamiones() throws IOException {
-        return routingService.cargarCamiones("data/camiones.txt"); 
+        LocalDateTime ahora = LocalDateTime.now()
+                .withDayOfMonth(25)
+                .withHour(12)
+                .withMinute(53)
+                .withSecond(20)
+                .withNano(0);
+        return routingService.cargarCamiones("data/camiones.txt", ahora); 
     }
 
     @PostMapping("/obtenerBloqueos")
     public ArrayList<Bloqueo> obtenerBloqueos() throws IOException {
-        return routingService.cargarBloqueos("data/bloqueos.txt"); 
+        return routingService.obtenerBloqueos("data/bloqueos.txt"); 
     }
 
 

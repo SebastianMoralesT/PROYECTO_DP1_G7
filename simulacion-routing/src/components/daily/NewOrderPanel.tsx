@@ -45,14 +45,14 @@ export default function NewOrderPanel() {
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
-          className="fixed left-16 top-1/2 transform -translate-y-1/2 bg-red-500 text-white p-2 rounded-r-lg shadow-lg z-30"
+          className="fixed left-16 top-1/4 transform -translate-y-1/2 bg-red-500 text-white p-2 rounded-r-lg shadow-lg z-30"
         >
           <FiChevronRight size={20} />
         </button>
       )}
 
       {/* Panel principal (estilo similar a TransportPanel pero en izquierda) */}
-      <div className={`fixed left-16 top-30 h-[calc(62vh-3rem)] bg-white border-r shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      <div className={`fixed left-16 top-22 h-[calc(62vh-3rem)] bg-white border-r shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
            style={{ width: '300px' }}>
         <div className="h-full flex flex-col">
           {/* Header */}

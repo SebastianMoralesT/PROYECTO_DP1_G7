@@ -4,7 +4,7 @@ import { FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import type { Pedido, Camion } from '../../lib/api';
 import { obtenerPedidos, obtenerCamiones } from "../../lib/api";
-import { useSimTime } from "@/components/weekly/TimeContext";
+import { useSimTime } from "@/components/collapse/TimeContext";
 
 export default function TransportPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -294,7 +294,7 @@ export default function TransportPanel() {
                               (item as Pedido).estado === 'Ruteando' ? 'bg-blue-100 text-blue-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {(item as Pedido).cantidadGlp}
+                              {(item as Pedido).estado}
                             </span>
                           </td>
                           <td className="p-2">

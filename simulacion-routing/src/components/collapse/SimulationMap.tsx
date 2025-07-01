@@ -1,9 +1,11 @@
-// components/daily/SimulationMap.tsx
+// components/SimulationMap.tsx
 "use client";
 
+import { BsPlayFill, BsStopFill } from "react-icons/bs";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { obtenerRutasOptimizadas, obtenerPedidos, obtenerPlantas, obtenerBloqueos } from "../../lib/api";
 import type { Camion, SubRuta, Ubicacion, Planta, Pedido, Bloqueo } from '../../lib/api';
+import { useSimTime } from "@/components/collapse/TimeContext";
 
 export default function SimulationMap() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -11,80 +13,10 @@ export default function SimulationMap() {
   const plantPrincipalImgRef = useRef<HTMLImageElement | null>(null);
   const plantSecundariaImgRef = useRef<HTMLImageElement | null>(null);
   const orderImgRef = useRef<HTMLImageElement | null>(null);
-  
-  // Estado para el tiempo real
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
-  const [isRunning, setIsRunning] = useState<boolean>(true);
-  const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
+  const { simTime } = useSimTime();
+  const simTimeRef = useRef(simTime);
 
-  // Actualizar el tiempo real cada segundo
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
-  // Función para dibujar bloqueos
-  const drawBloqueos = useCallback((
-    ctx: CanvasRenderingContext2D,
-    spacing: number,
-    currentTime: number
-  ) => {
-    if (!bloqueos || bloqueos.length === 0) return;
-
-    const bloqueosActivos = bloqueos.filter(bloqueo => {
-      try {
-        const inicio = new Date(bloqueo.inicio).getTime();
-        const fin = new Date(bloqueo.fin).getTime();
-        return currentTime >= inicio && currentTime <= fin;
-      } catch (e) {
-        console.error('Error procesando fechas de bloqueo:', e);
-        return false;
-      }
-    });
-
-    bloqueosActivos.forEach(bloqueo => {
-      const nodos = bloqueo.nodos;
-      if (nodos.length < 2) return;
-
-      ctx.save();
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-
-      const startX = nodos[0].posX * spacing;
-      const startY = nodos[0].posY * spacing;
-      ctx.moveTo(startX, startY);
-
-      for (let i = 1; i < nodos.length; i++) {
-        const x = nodos[i].posX * spacing;
-        const y = nodos[i].posY * spacing;
-        ctx.lineTo(x, y);
-      }
-
-      ctx.stroke();
-      ctx.restore();
-    });
-  }, [bloqueos]);
-
-  // Función para verificar si un camión debe moverse
-  const shouldTruckMove = useCallback((subRutas: SubRuta[], now: number) => {
-    return subRutas.some(subRuta => {
-      const startTime = new Date(subRuta.horaInicio).getTime();
-      return startTime <= now;
-    });
-  }, []);
-
-  // Función para verificar si un camión ha completado su ruta
-  const hasTruckFinished = useCallback((subRutas: SubRuta[], now: number) => {
-    if (!subRutas || subRutas.length === 0) return true;
-    
-    const lastSubRuta = subRutas[subRutas.length - 1];
-    const endTime = new Date(lastSubRuta.horaFin).getTime();
-    return endTime <= now;
-  }, []);
 
   const [hoveredPlant, setHoveredPlant] = useState<Planta | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -95,16 +27,28 @@ export default function SimulationMap() {
     plantSecundaria: false,
     order: false
   });
-  
+
   const animationFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
-  
+
   const [trucks, setTrucks] = useState<Camion[]>([]);
   const [plants, setPlants] = useState<Planta[]>([]);
   const [orders, setOrders] = useState<Pedido[]>([]);
+  const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
   const [routes, setRoutes] = useState<SubRuta[][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { setStartTime, startSimulation, stopSimulation } = useSimTime();
+  const [fechaInicio, setFechaInicio] = useState("");
+
+  const trucksProgressRef = useRef(
+    routes.map(() => ({
+      currentStep: 0,
+      progress: 0,
+      currentPos: [0, 0] as [number, number],
+      targetPos: [0, 0] as [number, number]
+    }))
+  );
 
   // Cargar datos del backend
   useEffect(() => {
@@ -117,8 +61,10 @@ export default function SimulationMap() {
           obtenerBloqueos()
         ]);
 
+        // Procesar camiones y rutas
         const camiones = rutasOptimizadas.map(r => r.camion);
         const subRutas = rutasOptimizadas.map(r => r.subRutas);
+
 
         setTrucks(camiones);
         setRoutes(subRutas);
@@ -135,6 +81,13 @@ export default function SimulationMap() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    //console.log("SimTime:", simTime.toISOString());
+    //console.log(simTimeRef.current);
+    simTimeRef.current = simTime;
+  }, [simTime]);
+
 
   // Cargar imágenes
   useEffect(() => {
@@ -169,14 +122,81 @@ export default function SimulationMap() {
         console.error("Error al cargar las imágenes:", error);
       }
     };
-    
+
     loadImages();
   }, []);
+
+  const drawBloqueos = useCallback((
+  ctx: CanvasRenderingContext2D,
+  spacing: number,
+  currentTime: Date
+) => {
+  if (!bloqueos || bloqueos.length === 0) return;
+
+  const ahora = currentTime.getTime();
+  const bloqueosActivos = bloqueos.filter(bloqueo => {
+    try {
+      const inicio = new Date(bloqueo.inicio).getTime();
+      const fin = new Date(bloqueo.fin).getTime();
+      return ahora >= inicio && ahora <= fin;
+    } catch (e) {
+      console.error('Error procesando fechas de bloqueo:', e);
+      return false;
+    }
+  });
+
+  bloqueosActivos.forEach(bloqueo => {
+    const nodos = bloqueo.nodos;
+    if (nodos.length < 2) return; // No se puede dibujar una línea con menos de 2 nodos
+
+    ctx.save();
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+
+    const startX = nodos[0].posX * spacing;
+    const startY = nodos[0].posY * spacing;
+    ctx.moveTo(startX, startY);
+
+    for (let i = 1; i < nodos.length; i++) {
+      const x = nodos[i].posX * spacing;
+      const y = nodos[i].posY * spacing;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+  });
+}, [bloqueos]);
+
+
+
+  // Inicializar posiciones cuando los datos estén listos
+  useEffect(() => {
+    if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
+
+    trucksProgressRef.current = routes.map((subRutas, index) => {
+      const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
+      const firstRoute = subRutas[0]?.trayectoria || [];
+      console.log("La subRuta, la hora de inicio es: "+ subRutas[0]?.horaInicio+ " en el nodo: "+subRutas[0]?.trayectoria);
+      return {
+        currentStep: 0,
+        progress: 0,
+        currentPos: [initialPos.posX, initialPos.posY] as [number, number],
+        targetPos: firstRoute.length > 0
+          ? [firstRoute[0].posX, firstRoute[0].posY] as [number, number]
+          : [initialPos.posX, initialPos.posY] as [number, number]
+      };
+    });
+
+    // Dibujar estado inicial
+    drawInitialState();
+  }, [imagesLoaded, loading, trucks, plants, orders, routes]);
 
   const drawGrid = useCallback((ctx: CanvasRenderingContext2D, cols: number, rows: number, spacing: number) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.strokeStyle = "#ccc";
-    
+
     for (let x = 0; x <= cols; x++) {
       ctx.beginPath();
       ctx.moveTo(x * spacing, 0);
@@ -192,29 +212,31 @@ export default function SimulationMap() {
   }, []);
 
   const drawPlant = useCallback((
-    ctx: CanvasRenderingContext2D, 
-    x: number, 
-    y: number, 
-    plant: Planta, 
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    plant: Planta,
     spacing: number
   ) => {
-    const isPrincipal = plant.id == "1";
+    const isPrincipal = plant.id == "1"; // Ajusta esta lógica según tu API
     const img = isPrincipal ? plantPrincipalImgRef.current : plantSecundariaImgRef.current;
-    
+
     if (!img) return;
 
     const imgSize = isPrincipal ? 30 : 25;
     const canvasX = x * spacing;
     const canvasY = y * spacing;
-    
+
+    // Guardar posición para el hover
     plant.canvasPosition = { x: canvasX, y: canvasY, size: imgSize };
-    
+
     ctx.save();
     ctx.translate(canvasX, canvasY);
     ctx.rotate(Math.PI);
     ctx.drawImage(img, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
     ctx.restore();
 
+    // Dibujar tooltip si esta planta está siendo hovered
     if (hoveredPlant?.id === plant.id) {
       drawPlantTooltip(ctx, plant, tooltipPosition.x, tooltipPosition.y);
     }
@@ -227,15 +249,17 @@ export default function SimulationMap() {
     y: number
   ) => {
     ctx.save();
-    ctx.scale(1, -1);
+    ctx.scale(1, -1); // Invertir el eje Y para dibujar correctamente
 
     const tooltipWidth = 160;
     const tooltipHeight = 55;
     const padding = 10;
 
+    // Ajuste para que no se salga del canvas
     const adjustedX = x + 20 > ctx.canvas.width ? x - tooltipWidth - 10 : x + 12;
     const adjustedY = -y + tooltipHeight > ctx.canvas.height ? -y - 12 : -y + 20;
 
+    // Estilo de fondo con sombra
     ctx.shadowColor = 'rgba(225, 16, 16, 0.3)';
     ctx.shadowBlur = 6;
     ctx.shadowOffsetX = 2;
@@ -249,12 +273,15 @@ export default function SimulationMap() {
     ctx.fill();
     ctx.stroke();
 
+    // Quitar sombra para texto
     ctx.shadowColor = 'transparent';
 
+    // Texto principal
     ctx.fillStyle = '#333';
     ctx.font = 'bold 13px Arial';
     ctx.fillText(`Planta ${plant.id}`, adjustedX + padding, adjustedY + 20);
 
+    // Texto de capacidad
     ctx.fillStyle = '#555';
     ctx.font = '12px Arial';
     ctx.fillText(
@@ -266,17 +293,18 @@ export default function SimulationMap() {
     ctx.restore();
   };
 
+
   const drawOrder = useCallback((
-    ctx: CanvasRenderingContext2D, 
-    x: number, 
-    y: number, 
-    order: Pedido, 
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    order: Pedido,
     spacing: number
   ) => {
     if (!orderImgRef.current) return;
 
     const imgSize = 20;
-    
+
     ctx.save();
     ctx.translate(x * spacing, y * spacing);
     ctx.rotate(Math.PI);
@@ -296,36 +324,38 @@ export default function SimulationMap() {
     ctx.strokeStyle = color || '#888888';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    
+
+    // Dibujar línea entre los puntos de la ruta
     for (let i = 0; i < route.length - 1; i++) {
       const { posX: x1, posY: y1 } = route[i];
       const { posX: x2, posY: y2 } = route[i + 1];
-      
+
       if (i === 0) {
         ctx.moveTo(x1 * spacing, y1 * spacing);
       }
       ctx.lineTo(x2 * spacing, y2 * spacing);
     }
-    
+
     ctx.stroke();
-    
+
+    // Dibujar puntos en cada coordenada de la ruta
     ctx.fillStyle = color || '#888888';
     route.forEach(({ posX: x, posY: y }) => {
       ctx.beginPath();
       ctx.arc(x * spacing, y * spacing, 3, 0, Math.PI * 2);
       ctx.fill();
     });
-    
+
     ctx.restore();
   }, []);
 
   const drawTruck = useCallback((
-    ctx: CanvasRenderingContext2D, 
-    x: number, 
-    y: number, 
-    truck: Camion, 
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    truck: Camion,
     spacing: number,
-    targetPos?: [number, number], 
+    targetPos?: [number, number],
     currentPos?: [number, number],
     isFinalPosition: boolean = false
   ) => {
@@ -342,8 +372,9 @@ export default function SimulationMap() {
       const dy = targetPos[1] - currentPos[1];
 
       if (isFinalPosition) {
-        ctx.rotate(Math.PI);  
+        ctx.rotate(Math.PI);
       } else {
+        // Comportamiento normal durante el movimiento
         if (dx === 1 && dy === 0) {
           ctx.rotate(Math.PI);
         } else if (dx === -1 && dy === 0) {
@@ -371,7 +402,7 @@ export default function SimulationMap() {
 
   const animate = useCallback((timestamp: number) => {
     if (!canvasRef.current || !Object.values(imagesLoaded).every(Boolean)) return;
-    
+
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
 
@@ -382,10 +413,16 @@ export default function SimulationMap() {
     if (!lastTimeRef.current) {
       lastTimeRef.current = timestamp;
     }
-    
+
+    const deltaTime = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
+
     drawGrid(ctx, cols, rows, spacing);
-    drawBloqueos(ctx, spacing, currentTime);
-    
+    drawBloqueos(ctx, spacing, simTimeRef.current);
+    if (hoveredPlant && ctx) {
+      drawPlantTooltip(ctx, hoveredPlant, tooltipPosition.x, tooltipPosition.y);
+    }
+
     // Dibujar plantas
     plants.forEach(plant => {
       drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
@@ -396,110 +433,110 @@ export default function SimulationMap() {
       drawOrder(ctx, order.destino.posX, order.destino.posY, order, spacing);
     });
 
+    // Dibujar rutas de los camiones
     routes.forEach((subRutas, index) => {
       const color = `hsl(${(index * 30) % 360}, 70%, 50%)`;
       subRutas.forEach(subRuta => {
         drawRoute(ctx, subRuta.trayectoria, color, spacing);
       });
     });
-    let anyTruckActive = false;
+
+    let allTrucksFinished = true;
+
+    if (!simTimeRef.current || simTimeRef.current.getTime() < simTimeRef.current.getTime()) {
+      trucksProgressRef.current.forEach((progress, idx) => {
+        progress.currentStep = -1;
+        progress.progress = 0;
+        progress.currentPos = [trucks[idx].ubicacionActual.posX, trucks[idx].ubicacionActual.posY];
+        progress.targetPos = [trucks[idx].ubicacionActual.posX, trucks[idx].ubicacionActual.posY];
+      });
+    }
+    simTimeRef.current = new Date(simTimeRef.current);
 
     routes.forEach((subRutas, index) => {
+      const progressData = trucksProgressRef.current[index];
       const truck = trucks[index];
       if (!truck || !subRutas || subRutas.length === 0) return;
 
-      const shouldMove = shouldTruckMove(subRutas, currentTime);
-      const hasFinished = hasTruckFinished(subRutas, currentTime);
+      const rutasVisibles = subRutas.filter(subRuta => {
+        const horaInicio = new Date(subRuta.horaInicio).getTime();
+        return horaInicio <= simTimeRef.current.getTime();
+      });
 
-      if (!shouldMove) {
-        // Dibujar camión en posición inicial
-        drawTruck(
-          ctx,
-          truck.ubicacionActual.posX, 
-          truck.ubicacionActual.posY, 
-          truck,
-          spacing
-        );
-        return;
+      const fullRoute = rutasVisibles.flatMap(subRuta => subRuta.trayectoria);
+      if (fullRoute.length === 0) return;
+
+      // Inicializar si aún no ha comenzado
+      if (progressData.currentStep === -1) {
+        const firstPos = fullRoute[0];
+        const secondPos = fullRoute[1] || fullRoute[0];
+        progressData.currentStep = 0;
+        progressData.currentPos = [firstPos.posX, firstPos.posY];
+        progressData.targetPos = [secondPos.posX, secondPos.posY];
+        progressData.progress = 0;
       }
 
-      if (hasFinished) {
-        // Dibujar camión en posición final
-        const finalPos = subRutas[subRutas.length - 1].trayectoria.slice(-1)[0];
+      if (progressData.currentStep >= fullRoute.length - 1) {
+        const lastPos = fullRoute[fullRoute.length - 1] || { posX: 0, posY: 0 };
+        progressData.currentPos = [lastPos.posX, lastPos.posY];
         drawTruck(
           ctx,
-          finalPos.posX, 
-          finalPos.posY, 
+          progressData.currentPos[0],
+          progressData.currentPos[1],
           truck,
           spacing,
-          undefined,
-          undefined,
+          progressData.currentPos,
+          progressData.currentPos,
           true
         );
         return;
       }
 
-      anyTruckActive = true;
-      
-      // Filtrar subrutas que ya deberían estar activas
-      const activeSubRutas = subRutas.filter(subRuta => 
-        new Date(subRuta.horaInicio).getTime() <= currentTime
+      allTrucksFinished = false;
+
+      progressData.progress += deltaTime / 1000;
+      const transitionDuration = 8;
+
+      if (progressData.progress >= transitionDuration) {
+        progressData.progress = 0;
+        progressData.currentStep++;
+
+        if (progressData.currentStep < fullRoute.length - 1) {
+          const currentStep = fullRoute[progressData.currentStep] || { posX: 0, posY: 0 };
+          const nextStep = fullRoute[progressData.currentStep + 1] || { posX: 0, posY: 0 };
+          progressData.currentPos = [currentStep.posX, currentStep.posY];
+          progressData.targetPos = [nextStep.posX, nextStep.posY];
+        } else {
+          const lastPos = fullRoute[fullRoute.length - 1] || { posX: 0, posY: 0 };
+          progressData.currentPos = [lastPos.posX, lastPos.posY];
+          progressData.targetPos = [lastPos.posX, lastPos.posY];
+        }
+      }
+
+      const t = Math.min(progressData.progress / transitionDuration, 1);
+      const interpolatedX = progressData.currentPos[0] + (progressData.targetPos[0] - progressData.currentPos[0]) * t;
+      const interpolatedY = progressData.currentPos[1] + (progressData.targetPos[1] - progressData.currentPos[1]) * t;
+
+      drawTruck(
+        ctx,
+        interpolatedX,
+        interpolatedY,
+        truck,
+        spacing,
+        progressData.targetPos,
+        progressData.currentPos,
+        false
       );
-      
-      const fullRoute = activeSubRutas.flatMap(subRuta => subRuta.trayectoria);
-      
-      // Calcular progreso basado en el tiempo real
-      const routeStartTime = new Date(subRutas[0].horaInicio).getTime();
-      const routeEndTime = new Date(subRutas[subRutas.length - 1].horaFin).getTime();
-      const totalDuration = routeEndTime - routeStartTime;
-      const elapsedTime = currentTime - routeStartTime;
-      const progress = Math.min(elapsedTime / totalDuration, 1);
-      
-      // Calcular posición actual
-      const totalSteps = fullRoute.length;
-      const currentStep = Math.min(Math.floor(progress * (totalSteps - 1)), totalSteps - 2);
-      const stepProgress = (progress * (totalSteps - 1)) % 1;
-      
-      if (currentStep < fullRoute.length - 1) {
-        const currentPos = fullRoute[currentStep];
-        const nextPos = fullRoute[currentStep + 1];
-        
-        const interpolatedX = currentPos.posX + (nextPos.posX - currentPos.posX) * stepProgress;
-        const interpolatedY = currentPos.posY + (nextPos.posY - currentPos.posY) * stepProgress;
-        
-        drawTruck(
-          ctx,
-          interpolatedX,
-          interpolatedY,
-          truck,
-          spacing,
-          [nextPos.posX, nextPos.posY],
-          [currentPos.posX, currentPos.posY]
-        );
-      } else {
-        // Última posición
-        const finalPos = fullRoute[fullRoute.length - 1];
-        drawTruck(
-          ctx,
-          finalPos.posX,
-          finalPos.posY,
-          truck,
-          spacing,
-          undefined,
-          undefined,
-          true
-        );
-      }
     });
 
-    if (isRunning && anyTruckActive) {
-      animationFrameRef.current = requestAnimationFrame(animate);
-    }
-  }, [currentTime, isRunning, imagesLoaded, plants, orders, trucks, routes, drawGrid, drawBloqueos, drawPlant, drawOrder, drawTruck, shouldTruckMove, hasTruckFinished]);
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+  }, [drawGrid, drawTruck, drawPlant, drawOrder, drawRoute, plants, orders, trucks, routes, imagesLoaded, simTime, hoveredPlant, tooltipPosition]);
+
 
   const drawInitialState = useCallback(() => {
     if (!canvasRef.current || !Object.values(imagesLoaded).every(Boolean)) return;
-    
+
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
 
@@ -507,6 +544,7 @@ export default function SimulationMap() {
     const rows = 50;
     const spacing = 13;
 
+    // Configuración inicial del canvas
     canvasRef.current.width = cols * spacing;
     canvasRef.current.height = rows * spacing;
 
@@ -514,26 +552,32 @@ export default function SimulationMap() {
     ctx.scale(1, -1);
 
     drawGrid(ctx, cols, rows, spacing);
-    drawBloqueos(ctx, spacing, currentTime);
-    
+    drawBloqueos(ctx, spacing, simTimeRef.current);
+    // Dibujar plantas
     plants.forEach(plant => {
       drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
     });
 
+    // Dibujar pedidos
     orders.forEach(order => {
       drawOrder(ctx, order.destino.posX, order.destino.posY, order, spacing);
     });
 
-    trucks.forEach((truck) => {
+    // Dibujar camiones en posición inicial
+    trucks.forEach((truck, index) => {
+      const progressData = trucksProgressRef.current[index];
       drawTruck(
         ctx,
-        truck.ubicacionActual.posX,
-        truck.ubicacionActual.posY,
+        progressData.currentPos[0],
+        progressData.currentPos[1],
         truck,
-        spacing
+        spacing,
+        progressData.targetPos,
+        progressData.currentPos,
+        false
       );
     });
-  }, [imagesLoaded, trucks, plants, orders, drawGrid, drawTruck, drawPlant, drawOrder, drawBloqueos, currentTime]);
+  }, [imagesLoaded, trucks, plants, orders, drawGrid, drawTruck, drawPlant, drawOrder]);
 
   const startAnimation = useCallback(() => {
     cancelAnimationFrame(animationFrameRef.current);
@@ -545,6 +589,7 @@ export default function SimulationMap() {
     cancelAnimationFrame(animationFrameRef.current);
   }, []);
 
+  // Configuración inicial del canvas
   useEffect(() => {
     if (!Object.values(imagesLoaded).every(Boolean) || !canvasRef.current) return;
 
@@ -563,65 +608,59 @@ export default function SimulationMap() {
     ctx.scale(1, -1);
 
     drawGrid(ctx, cols, rows, spacing);
-    drawBloqueos(ctx, spacing, currentTime);
-    
+
+    // Dibujar plantas
     plants.forEach(plant => {
       drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
     });
 
+    // Dibujar pedidos
     orders.forEach(order => {
       drawOrder(ctx, order.destino.posX, order.destino.posY, order, spacing);
     });
-    
-    trucks.forEach((truck) => {
+
+    // Dibujar camiones en posición inicial
+    trucks.forEach((truck, index) => {
+      const progressData = trucksProgressRef.current[index];
       drawTruck(
         ctx,
-        truck.ubicacionActual.posX,
-        truck.ubicacionActual.posY,
+        progressData.currentPos[0],
+        progressData.currentPos[1],
         truck,
-        spacing
+        spacing,
+        progressData.targetPos,
+        progressData.currentPos,
+        false
       );
     });
-  }, [imagesLoaded, trucks, plants, orders, drawGrid, drawTruck, drawPlant, drawOrder, drawBloqueos, currentTime]);
-
+  }, [imagesLoaded, trucks, plants, orders, drawGrid, drawTruck, drawPlant, drawOrder]);
   const handleCanvasHover = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const y = rect.bottom - e.clientY;
-    
+    const y = rect.bottom - e.clientY; // Invertir Y para coincidir con el sistema de coordenadas del canvas
+
     setTooltipPosition({ x, y });
-    
+
+    // Verificar si el mouse está sobre alguna planta
     const hovered = plants.find(plant => {
       if (!plant.canvasPosition) return false;
       const { x: plantX, y: plantY, size } = plant.canvasPosition;
-      return x >= plantX - size/2 && 
-             x <= plantX + size/2 && 
-             y >= plantY - size/2 && 
-             y <= plantY + size/2;
+      return x >= plantX - size / 2 &&
+        x <= plantX + size / 2 &&
+        y >= plantY - size / 2 &&
+        y <= plantY + size / 2;
     });
-    
+
     setHoveredPlant(hovered || null);
   };
-
-  useEffect(() => {
-    if (isRunning) {
-      startAnimation();
-    } else {
-      stopAnimation();
-    }
-    
-    return () => {
-      stopAnimation();
-    };
-  }, [isRunning, startAnimation, stopAnimation]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-200 flex items-center justify-center">
-        <div className="text-xl">Cargando datos...</div>
+        <div className="text-xl">Cargando datos de simulación...</div>
       </div>
     );
   }
@@ -634,11 +673,54 @@ export default function SimulationMap() {
     );
   }
 
+  const handleFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFechaInicio(e.target.value);
+    const fecha = new Date(e.target.value);
+    //console.log('FECHA ELEGIDA: ', fecha);
+    setStartTime(fecha);
+  };
+
   return (
     <div className="min-h-screen bg-gray-200 relative overflow-auto">
+      <div className="absolute top-4 left-16 z-10 flex gap-2">
+        <div className="flex items-end gap-2">
+          <div>
+            <label className="block text-sm font-medium mb-1">Fecha y Hora de Inicio</label>
+            <div className="flex items-center border rounded px-2 py-1 bg-white">
+              <input
+                type="datetime-local"
+                value={fechaInicio}
+                onChange={handleFechaChange}
+              />
+              <span className="text-gray-400 ml-2">📅</span>
+            </div>
+          </div>
+
+          <button
+            className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center"
+            onClick={() => {
+              startSimulation();            // ⏱ Inicia el reloj de simulación
+              startAnimation();   // 🚚 Inicia la animación en el canvas
+            }}
+          >
+            <BsPlayFill className="w-4 h-4" />
+          </button>
+
+          <button
+            className="w-8 h-8 rounded-full border-2 border-red-500 text-red-500 flex items-center justify-center"
+            onClick={() => {
+              stopSimulation();             // ⏹ Detiene el reloj de simulación
+              stopAnimation();    // ✋ Detiene la animación
+            }}
+          >
+            <BsStopFill className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       <div className="absolute inset-0 flex items-center justify-center overflow-auto">
-        <canvas 
-          ref={canvasRef} 
+        <canvas
+          ref={canvasRef}
           className="bg-white border border-gray-400"
           onMouseMove={handleCanvasHover}
           onMouseOut={() => setHoveredPlant(null)}
