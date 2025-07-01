@@ -94,12 +94,12 @@ public class SimulatedAnnealing {
 
     int idx = 0;
     for (Pedido p : pedidos) {
-        PlanCamion plan = plans.get(idx % plans.size());
+    boolean asignado = false;
+
+    for (PlanCamion plan : plans) {
         Camion c = plan.getCamion();
         LocalDateTime t = now;
         Nodo start = c.getUbicacionActual();
-
-        
 
         if (!plan.getSubRutas().isEmpty()) {
             SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size() - 1);
@@ -107,13 +107,21 @@ public class SimulatedAnnealing {
             t = last.getHoraFin();
         }
 
-        System.out.println("||||||Intentando ir al pedido desde " + start.getPosX() + " " + start.getPosY() + " hasta " + p.getDestino().getPosX() + " " + p.getDestino().getPosY());
+        System.out.println("Intentando con camión: " + c.getCodigo() + " desde " + start.getPosX() + "," + start.getPosY());
 
-        Map.Entry<ArrayList<Nodo>, LocalDateTime> resultado = PathFinder.generarTrayectoria(grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t);
-        System.out.println("> Inicio: la hora Salida es: +" + resultado.getValue()+ " y la trayectoria es: "+ (resultado.getKey().size()-1));
+        Map.Entry<ArrayList<Nodo>, LocalDateTime> resultado = PathFinder.generarTrayectoria(
+                grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
+        );
+
         ArrayList<Nodo> trayectoria = resultado.getKey();
         LocalDateTime horaSalida = resultado.getValue();
         LocalDateTime horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);
+
+        // Si no se puede llegar o la trayectoria es vacía o no cumple plazo, intenta con otro camión
+        if (trayectoria == null || trayectoria.size() <= 1 || horaLlegada.isAfter(p.getPlazoMaximoEntrega())) {
+            System.out.println("Con este camión no se pudo, intentando con otro...");
+            continue;
+        }
 
         double neededGLP = (trayectoria.size() - 1) * ((c.getPesoVacio() + c.getGlpActual()) / 180.0);
 
@@ -130,37 +138,53 @@ public class SimulatedAnnealing {
                 }
             }
 
-            System.out.println("||||||Yendo a planta para recargar");
+            System.out.println("Yendo a planta para recargar...");
 
-            Map.Entry<ArrayList<Nodo>, LocalDateTime> trayAPlanta = PathFinder.generarTrayectoria(grid, start, mejor.getUbicacion(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t);
-             System.out.println("> Yendo a planta: la hora Salida es: +" + trayAPlanta.getValue()+ " y la trayectoria es: "+ (trayAPlanta.getKey().size()-1));
+            Map.Entry<ArrayList<Nodo>, LocalDateTime> trayAPlanta = PathFinder.generarTrayectoria(
+                    grid, start, mejor.getUbicacion(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
+            );
+
             ArrayList<Nodo> rutaPlanta = trayAPlanta.getKey();
             LocalDateTime salidaPlanta = trayAPlanta.getValue();
             LocalDateTime llegadaPlanta = salidaPlanta.plusSeconds((rutaPlanta.size() - 1) * 72);
-            System.out.println("Voy a crear una SubRuta: con hora de salida: "+salidaPlanta+" y hora de llegada: "+llegadaPlanta);
-            plan.addSubRuta(new SubRuta(start, mejor.getUbicacion(), null, rutaPlanta, salidaPlanta, llegadaPlanta));
 
+            if (rutaPlanta == null || rutaPlanta.size() <= 1) {
+                System.out.println("No se puede llegar a planta, intentando con otro camión...");
+                continue;
+            }
+
+            plan.addSubRuta(new SubRuta(start, mejor.getUbicacion(), null, rutaPlanta, salidaPlanta, llegadaPlanta));
             c.setGlpActual(c.getCapacidadMaxima());
             start = mejor.getUbicacion();
             t = llegadaPlanta;
 
-            // Ir al pedido desde planta
-            System.out.println("||||||Yendo del pedido a planta");
-            trayAPlanta = PathFinder.generarTrayectoria(grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), t, t.plusMinutes(15));
-             System.out.println("||||||Planta a Pedido: la hora Salida es: +" + resultado.getValue()+ " y la trayectoria es: "+ (trayAPlanta.getKey().size()-1));
-            trayectoria = trayAPlanta.getKey();
-            horaSalida = trayAPlanta.getValue();
+            // Reintenta desde planta al pedido
+            resultado = PathFinder.generarTrayectoria(grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), t, t.plusMinutes(15), c);
+            trayectoria = resultado.getKey();
+            horaSalida = resultado.getValue();
             horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);
+
+            if (trayectoria == null || trayectoria.size() <= 1 || horaLlegada.isAfter(p.getPlazoMaximoEntrega())) {
+                System.out.println("No se pudo llegar al pedido ni después de recargar, probando otro camión...");
+                continue;
+            }
+
+            neededGLP = (trayectoria.size() - 1) * ((c.getPesoVacio() + c.getGlpActual()) / 180.0);
         }
 
-        t= horaLlegada;
-        System.out.println("Voy a crear una SubRuta: con hora de salida: "+horaSalida+" y hora de llegada: "+horaLlegada);
+        // Finalmente, asignamos el pedido
         plan.addSubRuta(new SubRuta(start, p.getDestino(), p, trayectoria, horaSalida, horaLlegada));
         c.setGlpActual(c.getGlpActual() - neededGLP);
         c.setUbicacionActual(p.getDestino());
-        //Tengo que vvvveeer la consola, ahí esta la respuetsaaa
-        idx++;
+
+        asignado = true;
+        break; // Ya asignamos el pedido, no seguimos probando con otros camiones
     }
+
+    if (!asignado) {
+        System.out.println(">>> No se pudo asignar el pedido: " + p.getId());
+    }
+}
 
     // Retorno a base
     for (PlanCamion plan : plans) {
@@ -171,7 +195,7 @@ public class SimulatedAnnealing {
 
             if (!s.equals(base)) {
                 System.out.println("||||||De regreso a base");
-                Map.Entry<ArrayList<Nodo>, LocalDateTime> trayRegreso = PathFinder.generarTrayectoria(grid, s, base, t, t.plusHours(60),t.plusMinutes(15), t.plusMinutes(15));
+                Map.Entry<ArrayList<Nodo>, LocalDateTime> trayRegreso = PathFinder.generarTrayectoria(grid, s, base, t, t.plusHours(60),t.plusMinutes(15), t.plusMinutes(15),plan.getCamion());
                  System.out.println("|||||| De Regreso: la hora Salida es: +" + trayRegreso.getValue()+ " y la trayectoria es: "+ (trayRegreso.getKey().size()-1));
                 ArrayList<Nodo> rutaRegreso = trayRegreso.getKey();
                 LocalDateTime salidaRegreso = trayRegreso.getValue();
@@ -241,7 +265,7 @@ public class SimulatedAnnealing {
             Nodo dest = sr.getFin();
             
             // Recarga si falta GLP
-            Map.Entry<ArrayList<Nodo>,LocalDateTime> resultado = PathFinder.generarTrayectoria(grid, prev, dest, t, p.getPlazoMaximoEntrega(),p.getHoraPedido().plusHours(4), t);
+            Map.Entry<ArrayList<Nodo>,LocalDateTime> resultado = PathFinder.generarTrayectoria(grid, prev, dest, t, p.getPlazoMaximoEntrega(),p.getHoraPedido().plusHours(4), t, c);
             
             double distToDest = resultado.getKey().size()-1;
             double neededGLP = distToDest * ((c.getPesoVacio()+c.getGlpActual()) / 180.0);
@@ -256,7 +280,7 @@ public class SimulatedAnnealing {
                         mejor = pl;
                     }
                 }
-                Map.Entry<ArrayList<Nodo>,LocalDateTime> trayAPlanta = PathFinder.generarTrayectoria(grid, prev, mejor.getUbicacion(), t,p.getPlazoMaximoEntrega(),p.getHoraPedido().plusHours(4), t);
+                Map.Entry<ArrayList<Nodo>,LocalDateTime> trayAPlanta = PathFinder.generarTrayectoria(grid, prev, mejor.getUbicacion(), t,p.getPlazoMaximoEntrega(),p.getHoraPedido().plusHours(4), t, c);
                 tRec = t.plusSeconds((trayAPlanta.getKey().size()-1)*72);
                 newSubs.add(new SubRuta(prev, mejor.getUbicacion(), null, trayAPlanta.getKey(), trayAPlanta.getValue(), tRec));
                 c.setGlpActual(c.getCapacidadMaxima());
@@ -269,7 +293,7 @@ public class SimulatedAnnealing {
             if(ban == 0){ // Si no necesito ir por una planta
                 trayPlantAPed = resultado;
             } else { // Si es que necesite ir por planta.
-                trayPlantAPed = PathFinder.generarTrayectoria(grid, prev, dest, t,p.getPlazoMaximoEntrega(),t,t);
+                trayPlantAPed = PathFinder.generarTrayectoria(grid, prev, dest, t,p.getPlazoMaximoEntrega(),t,t, c);
                 c.setGlpActual(c.getCapacidadMaxima());
                 c.setUbicacionActual(dest);
             }
@@ -286,7 +310,7 @@ public class SimulatedAnnealing {
 
             // Retorno a base
             if (!prev.equals(base) && sr==plan.getSubRutas().get(plan.getSubRutas().size() - 1)) {
-                Map.Entry<ArrayList<Nodo>,LocalDateTime> trajBack = PathFinder.generarTrayectoria(grid, prev, base, t, t.plusDays(10), t.plusMinutes(15),t.plusMinutes(15));
+                Map.Entry<ArrayList<Nodo>,LocalDateTime> trajBack = PathFinder.generarTrayectoria(grid, prev, base, t, t.plusDays(10), t.plusMinutes(15),t.plusMinutes(15), c);
                 LocalDateTime tBack = t.plusSeconds((trajBack.getKey().size()-1)*72);;
                 newSubs.add(new SubRuta(prev, base, null, trajBack.getKey(), trajBack.getValue(), tBack));
             }
