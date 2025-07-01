@@ -36,7 +36,10 @@ public class RoutingController {
                 .withMinute(53)
                 .withSecond(20)
                 .withNano(0);
-        return routingService.optimize(ahora);
+        ArrayList<Pedido> pedidosPendientes = new ArrayList<>();
+        ArrayList<Camion> camionesActualizados = routingService.cargarCamiones("data/camiones.txt", ahora);
+
+        return routingService.optimize(ahora, pedidosPendientes, camionesActualizados);
     }
 
     @PostMapping("/obtenerPedidos") 

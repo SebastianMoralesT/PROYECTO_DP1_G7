@@ -49,9 +49,7 @@ public class SimulatedAnnealing {
      * Ejecuta SA y retorna la mejor solución encontrada.
      */
     public Solucion optimize(LocalDateTime now) {
-            //Solucion current = simularPedidosEnTiempoReal(pedidos, camiones, now);
-
-            //return current;
+        
         Solucion current = initialSolution(now);
 
         
@@ -61,9 +59,6 @@ public class SimulatedAnnealing {
         for (int i = 0; i < maxIterations; i++) {
             Solucion neighbor = neighborSolution(current, now);
             
-             double costC = cost(current);
-             double costN = cost(neighbor);
-             
             double fitC = fitness(current);
             double fitN = fitness(neighbor);
             if (fitN > fitC || Math.exp((fitN - fitC) / temp) > random.nextDouble()) {
@@ -83,132 +78,132 @@ public class SimulatedAnnealing {
      * secuencialmente.
      */
     private Solucion initialSolution(LocalDateTime now) {
-    System.out.println("Esta ingresando a initialSolution, now es: " + now);
-    Nodo base = plantas.get(0).getUbicacion(); // planta principal
+        System.out.println("Esta ingresando a initialSolution, now es: " + now);
+        Nodo base = plantas.get(0).getUbicacion(); // planta principal
 
-    ArrayList<PlanCamion> plans = new ArrayList<>();
-    for (Camion c : camiones) {
-        c.setGlpActual(c.getCapacidadMaxima());
-        plans.add(new PlanCamion(c, new ArrayList<>()));
-    }
-
-    int idx = 0;
-    for (Pedido p : pedidos) {
-    boolean asignado = false;
-
-    for (PlanCamion plan : plans) {
-        Camion c = plan.getCamion();
-        LocalDateTime t = now;
-        Nodo start = c.getUbicacionActual();
-
-        if (!plan.getSubRutas().isEmpty()) {
-            SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size() - 1);
-            start = last.getFin();
-            t = last.getHoraFin();
+        ArrayList<PlanCamion> plans = new ArrayList<>();
+        for (Camion c : camiones) {
+            c.setGlpActual(c.getCapacidadMaxima());
+            plans.add(new PlanCamion(c, new ArrayList<>()));
         }
 
-        System.out.println("Intentando con camión: " + c.getCodigo() + " desde " + start.getPosX() + "," + start.getPosY());
+        int idx = 0;
+        for (Pedido p : pedidos) {
+        boolean asignado = false;
 
-        Map.Entry<ArrayList<Nodo>, LocalDateTime> resultado = PathFinder.generarTrayectoria(
-                grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
-        );
+        for (PlanCamion plan : plans) {
+            Camion c = plan.getCamion();
+            LocalDateTime t = now;
+            Nodo start = c.getUbicacionActual();
 
-        ArrayList<Nodo> trayectoria = resultado.getKey();
-        LocalDateTime horaSalida = resultado.getValue();
-        LocalDateTime horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);
-
-        // Si no se puede llegar o la trayectoria es vacía o no cumple plazo, intenta con otro camión
-        if (trayectoria == null || trayectoria.size() <= 1 || horaLlegada.isAfter(p.getPlazoMaximoEntrega())) {
-            System.out.println("Con este camión no se pudo, intentando con otro...");
-            continue;
-        }
-
-        double neededGLP = (trayectoria.size() - 1) * ((c.getPesoVacio() + c.getGlpActual()) / 180.0);
-
-        if (c.getGlpActual() < neededGLP) {
-            // Ir a planta a recargar
-            Planta mejor = null;
-            double bestDist = Double.MAX_VALUE;
-
-            for (Planta pl : plantas) {
-                double d = distance(start, pl.getUbicacion());
-                if (d < bestDist) {
-                    bestDist = d;
-                    mejor = pl;
-                }
+            if (!plan.getSubRutas().isEmpty()) {
+                SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size() - 1);
+                start = last.getFin();
+                t = last.getHoraFin();
             }
 
-            System.out.println("Yendo a planta para recargar...");
+            System.out.println("Intentando con camión: " + c.getCodigo() + " desde " + start.getPosX() + "," + start.getPosY());
 
-            Map.Entry<ArrayList<Nodo>, LocalDateTime> trayAPlanta = PathFinder.generarTrayectoria(
-                    grid, start, mejor.getUbicacion(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
+            Map.Entry<ArrayList<Nodo>, LocalDateTime> resultado = PathFinder.generarTrayectoria(
+                    grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
             );
 
-            ArrayList<Nodo> rutaPlanta = trayAPlanta.getKey();
-            LocalDateTime salidaPlanta = trayAPlanta.getValue();
-            LocalDateTime llegadaPlanta = salidaPlanta.plusSeconds((rutaPlanta.size() - 1) * 72);
+            ArrayList<Nodo> trayectoria = resultado.getKey();
+            LocalDateTime horaSalida = resultado.getValue();
+            LocalDateTime horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);
 
-            if (rutaPlanta == null || rutaPlanta.size() <= 1) {
-                System.out.println("No se puede llegar a planta, intentando con otro camión...");
-                continue;
-            }
-
-            plan.addSubRuta(new SubRuta(start, mejor.getUbicacion(), null, rutaPlanta, salidaPlanta, llegadaPlanta));
-            c.setGlpActual(c.getCapacidadMaxima());
-            start = mejor.getUbicacion();
-            t = llegadaPlanta;
-
-            // Reintenta desde planta al pedido
-            resultado = PathFinder.generarTrayectoria(grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), t, t.plusMinutes(15), c);
-            trayectoria = resultado.getKey();
-            horaSalida = resultado.getValue();
-            horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);
-
+            // Si no se puede llegar o la trayectoria es vacía o no cumple plazo, intenta con otro camión
             if (trayectoria == null || trayectoria.size() <= 1 || horaLlegada.isAfter(p.getPlazoMaximoEntrega())) {
-                System.out.println("No se pudo llegar al pedido ni después de recargar, probando otro camión...");
+                System.out.println("Con este camión no se pudo, intentando con otro...");
                 continue;
             }
 
-            neededGLP = (trayectoria.size() - 1) * ((c.getPesoVacio() + c.getGlpActual()) / 180.0);
+            double neededGLP = (trayectoria.size() - 1) * ((c.getPesoVacio() + c.getGlpActual()) / 180.0);
+
+            if (c.getGlpActual() < neededGLP) {
+                // Ir a planta a recargar
+                Planta mejor = null;
+                double bestDist = Double.MAX_VALUE;
+
+                for (Planta pl : plantas) {
+                    double d = distance(start, pl.getUbicacion());
+                    if (d < bestDist) {
+                        bestDist = d;
+                        mejor = pl;
+                    }
+                }
+
+                System.out.println("Yendo a planta para recargar...");
+
+                Map.Entry<ArrayList<Nodo>, LocalDateTime> trayAPlanta = PathFinder.generarTrayectoria(
+                        grid, start, mejor.getUbicacion(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
+                );
+
+                ArrayList<Nodo> rutaPlanta = trayAPlanta.getKey();
+                LocalDateTime salidaPlanta = trayAPlanta.getValue();
+                LocalDateTime llegadaPlanta = salidaPlanta.plusSeconds((rutaPlanta.size() - 1) * 72);
+
+                if (rutaPlanta == null || rutaPlanta.size() <= 1) {
+                    System.out.println("No se puede llegar a planta, intentando con otro camión...");
+                    continue;
+                }
+
+                plan.addSubRuta(new SubRuta(start, mejor.getUbicacion(), null, rutaPlanta, salidaPlanta, llegadaPlanta));
+                c.setGlpActual(c.getCapacidadMaxima());
+                start = mejor.getUbicacion();
+                t = llegadaPlanta;
+
+                // Reintenta desde planta al pedido
+                resultado = PathFinder.generarTrayectoria(grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), t, t.plusMinutes(15), c);
+                trayectoria = resultado.getKey();
+                horaSalida = resultado.getValue();
+                horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);
+
+                if (trayectoria == null || trayectoria.size() <= 1 || horaLlegada.isAfter(p.getPlazoMaximoEntrega())) {
+                    System.out.println("No se pudo llegar al pedido ni después de recargar, probando otro camión...");
+                    continue;
+                }
+
+                neededGLP = (trayectoria.size() - 1) * ((c.getPesoVacio() + c.getGlpActual()) / 180.0);
+            }
+
+            // Finalmente, asignamos el pedido
+            plan.addSubRuta(new SubRuta(start, p.getDestino(), p, trayectoria, horaSalida, horaLlegada));
+            c.setGlpActual(c.getGlpActual() - neededGLP);
+            c.setUbicacionActual(p.getDestino());
+
+            asignado = true;
+            break; // Ya asignamos el pedido, no seguimos probando con otros camiones
         }
 
-        // Finalmente, asignamos el pedido
-        plan.addSubRuta(new SubRuta(start, p.getDestino(), p, trayectoria, horaSalida, horaLlegada));
-        c.setGlpActual(c.getGlpActual() - neededGLP);
-        c.setUbicacionActual(p.getDestino());
-
-        asignado = true;
-        break; // Ya asignamos el pedido, no seguimos probando con otros camiones
+        if (!asignado) {
+            System.out.println(">>> No se pudo asignar el pedido: " + p.getId());
+        }
     }
 
-    if (!asignado) {
-        System.out.println(">>> No se pudo asignar el pedido: " + p.getId());
-    }
-}
+        // Retorno a base
+        for (PlanCamion plan : plans) {
+            if (!plan.getSubRutas().isEmpty()) {
+                SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size() - 1);
+                Nodo s = last.getFin();
+                LocalDateTime t = last.getHoraFin();
 
-    // Retorno a base
-    for (PlanCamion plan : plans) {
-        if (!plan.getSubRutas().isEmpty()) {
-            SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size() - 1);
-            Nodo s = last.getFin();
-            LocalDateTime t = last.getHoraFin();
-
-            if (!s.equals(base)) {
-                System.out.println("||||||De regreso a base");
-                Map.Entry<ArrayList<Nodo>, LocalDateTime> trayRegreso = PathFinder.generarTrayectoria(grid, s, base, t, t.plusHours(60),t.plusMinutes(15), t.plusMinutes(15),plan.getCamion());
-                 System.out.println("|||||| De Regreso: la hora Salida es: +" + trayRegreso.getValue()+ " y la trayectoria es: "+ (trayRegreso.getKey().size()-1));
-                ArrayList<Nodo> rutaRegreso = trayRegreso.getKey();
-                LocalDateTime salidaRegreso = trayRegreso.getValue();
-                LocalDateTime llegadaRegreso = salidaRegreso.plusSeconds((rutaRegreso.size() - 1) * 72);
-                System.out.println("Voy a crear una SubRuta: con hora de salida: "+salidaRegreso+" y hora de llegada: "+llegadaRegreso);
-                plan.addSubRuta(new SubRuta(s, base, null, rutaRegreso, salidaRegreso, llegadaRegreso));
+                if (!s.equals(base)) {
+                    System.out.println("||||||De regreso a base");
+                    Map.Entry<ArrayList<Nodo>, LocalDateTime> trayRegreso = PathFinder.generarTrayectoria(grid, s, base, t, t.plusHours(60),t.plusMinutes(15), t.plusMinutes(15),plan.getCamion());
+                    System.out.println("|||||| De Regreso: la hora Salida es: +" + trayRegreso.getValue()+ " y la trayectoria es: "+ (trayRegreso.getKey().size()-1));
+                    ArrayList<Nodo> rutaRegreso = trayRegreso.getKey();
+                    LocalDateTime salidaRegreso = trayRegreso.getValue();
+                    LocalDateTime llegadaRegreso = salidaRegreso.plusSeconds((rutaRegreso.size() - 1) * 72);
+                    System.out.println("Voy a crear una SubRuta: con hora de salida: "+salidaRegreso+" y hora de llegada: "+llegadaRegreso);
+                    plan.addSubRuta(new SubRuta(s, base, null, rutaRegreso, salidaRegreso, llegadaRegreso));
+                }
             }
         }
-    }
 
-    Solucion sol = new Solucion(plans, 0);
-    sol.setCosto(cost(sol));
-    return sol;
+        Solucion sol = new Solucion(plans, 0);
+        sol.setCosto(cost(sol));
+        return sol;
 }
 
     /**

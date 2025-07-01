@@ -72,9 +72,9 @@ public class RoutingService {
     /**
      * Ejecuta el SA con los datos ya cargados y los pedidos/camiones de la petición.
      */
-    public Solucion optimize(LocalDateTime ahora) throws IOException{
+    public Solucion optimize(LocalDateTime ahora, ArrayList<Pedido> pedidosNoEntregados, ArrayList<Camion> camionesActualizados) throws IOException{
 
-        ArrayList<Pedido> pedidos = cargarPedidosSegmentado("data/pedidos.txt", ahora);
+        ArrayList<Pedido> pedidos = cargarPedidosParaPlanificar("data/pedidos.txt", ahora, pedidosNoEntregados);
         for(Pedido p : pedidos){
             System.out.println("Los pedidos son: "+p.getCantidadGlp());
         }
@@ -83,20 +83,25 @@ public class RoutingService {
         cargarMantenimientos("data/mantenimiento.txt", camiones);
         ArrayList<Planta> plantas = obtenerPlantas();
 
+        
         SimulatedAnnealing sa = new SimulatedAnnealing( 5000, 0.005, 100, plantas, camiones, pedidos, grid);
         Solucion mejor = sa.optimize(ahora);
+        
+        
         for(int i = 0; i < mejor.getPlanesCamion().size(); i++){
             if(mejor.getPlanesCamion().get(i).getSubRutas().size() != 0){
-                System.out.println("El camion es: "+ mejor.getPlanesCamion().get(i).getCamion().getCodigo() + " y sus subrutas: ");
+                Camion c = mejor.getPlanesCamion().get(i).getCamion();
+                System.out.println("El camion es: "+ c.getCodigo()+" y su glpRestante es: "+c.getGlpActual());
+                /* 
                 for(int j=0; j < mejor.getPlanesCamion().get(i).getSubRutas().size(); j++){
-                    System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
-                    System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
-                    System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
+                    //System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
+                    //System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
+                    //System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
                     for(int k=0; k < mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size(); k++){
                         System.out.print("("+mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosX() + " " + mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosY()+")"); //+") y su hora de TN: "+ current.getPlanesCamion().get(i).getSubRutas().get(j).getTiemposNodo().get(k)
                     }
                     System.out.println("-");
-                }
+                }*/
             }
         }
         return mejor;
@@ -185,7 +190,15 @@ public class RoutingService {
         return pedidos;
     }
 
-    public ArrayList<Pedido> cargarPedidosSegmentado(String filePath, LocalDateTime ahora) throws IOException {
+    public static ArrayList<Pedido> cargarPedidosParaPlanificar(String filePath, LocalDateTime ahora, ArrayList<Pedido> pedidosNoEntregadosAnteriormente) throws IOException {
+        ArrayList<Pedido> pedidos = cargarPedidosSegmentado("data/pedidos.txt", ahora);
+        for(int i = 0; i < pedidos.size(); i++){
+            pedidosNoEntregadosAnteriormente.add(pedidos.get(i));
+        }
+        return pedidosNoEntregadosAnteriormente;
+    }
+
+    public static ArrayList<Pedido> cargarPedidosSegmentado(String filePath, LocalDateTime ahora) throws IOException {
         ArrayList<Pedido> pedidos = new ArrayList<>();
         Path path = Paths.get(filePath);
 
@@ -250,15 +263,17 @@ public class RoutingService {
                 continue;
             String[] parts = line.split(",");
             String tipo = parts[0];
-            int x = Integer.parseInt(parts[5]);
-            int y = Integer.parseInt(parts[6]);
+            double tanqueActual = Double.parseDouble(parts[1]);
+            double cargaActual = Double.parseDouble(parts[2]);
+            int x = Integer.parseInt(parts[3]);
+            int y = Integer.parseInt(parts[4]);
             // Contador para código
             int idx = count.getOrDefault(tipo, 0) + 1;
             count.put(tipo, idx);
             String codigo = String.format("%s%02d", tipo, idx);
 
             Nodo ubic = grid.getNodoAt(x, y); 
-            Camion c = new Camion(codigo, tipo, ubic, false, ahora);
+            Camion c = new Camion(codigo, tipo, ubic, false, ahora, tanqueActual, cargaActual);
             camiones.add(c);
         }
         return camiones;

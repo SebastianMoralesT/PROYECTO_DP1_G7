@@ -49,13 +49,14 @@ public class Camion {
 
     public Camion() {}
 
-    public Camion(String codigo, String tipo, Nodo ubicacionActual, boolean enRuta, LocalDateTime disponibleDesde) {
+    public Camion(String codigo, String tipo, Nodo ubicacionActual, boolean enRuta, LocalDateTime disponibleDesde, double glpTanque, double glpActual) {
         this.codigo = codigo;
         this.tipo = tipo;
         this.ubicacionActual = ubicacionActual;
         this.enRuta = enRuta;
         this.disponibleDesde = disponibleDesde;
-        this.glpTanque=25;
+        this.glpTanque=glpTanque;
+        this.glpActual = glpActual;
         AsignarCaracteristicasFlota(tipo);
     }
 
@@ -64,22 +65,18 @@ public class Camion {
             case "TA":
                 this.pesoVacio=2.5;
                 this.capacidadMaxima=25;
-                this.glpActual=25;
                 break;
             case "TB":
                 this.pesoVacio=2;
                 this.capacidadMaxima=15;
-                this.glpActual=15;
                 break;
             case "TC":
                 this.pesoVacio=1.5;
                 this.capacidadMaxima=10;
-                this.glpActual=10;
                 break;
             case "TD":
                 this.pesoVacio=1;
                 this.capacidadMaxima=05;
-                this.glpActual=05;
                 break;
             default:
                 System.out.println("Se ha ingresado mal los tipos de camiones.");

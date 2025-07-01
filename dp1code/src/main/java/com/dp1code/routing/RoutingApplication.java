@@ -52,17 +52,19 @@ public class RoutingApplication {
         long t0 = System.nanoTime();
         Solucion mejor = sa.optimize(ahora);
         for(int i = 0; i < mejor.getPlanesCamion().size(); i++){
+            Camion c = mejor.getPlanesCamion().get(i).getCamion();
+            System.out.println("El camion es: "+ c.getCodigo()+" y su glpRestante es: "+c.getGlpActual()+" y su glpTanque es: "+c.getGlpTanque());
             if(mejor.getPlanesCamion().get(i).getSubRutas().size() != 0){
-                System.out.println("El camion es: "+ mejor.getPlanesCamion().get(i).getCamion().getCodigo() + " y sus subrutas: ");
+                /* 
                 for(int j=0; j < mejor.getPlanesCamion().get(i).getSubRutas().size(); j++){
-                    System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
-                    System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
-                    System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
+                    //System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
+                    //System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
+                    //System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
                     for(int k=0; k < mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size(); k++){
-                        System.out.print("("+mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosX() + " " + mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosY()+")  y su hora de TN: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTiemposNodo().get(k));
+                        System.out.print("("+mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosX() + " " + mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosY()+")"); //+") y su hora de TN: "+ current.getPlanesCamion().get(i).getSubRutas().get(j).getTiemposNodo().get(k)
                     }
                     System.out.println("-");
-                }
+                }*/
             }
         }
         long t1 = System.nanoTime();
@@ -105,6 +107,15 @@ public class RoutingApplication {
         return plantas;
     }
 
+    public static ArrayList<Pedido> cargarPedidosParaPlanificar(String filePath, LocalDateTime ahora, ArrayList<Pedido> pedidosNoEntregadosAnteriormente) throws IOException {
+        ArrayList<Pedido> pedidos = cargarPedidosSegmentado("data/pedidos.txt", ahora);
+        for(int i = 0; i < pedidos.size(); i++){
+            pedidosNoEntregadosAnteriormente.add(pedidos.get(i));
+        }
+        return pedidosNoEntregadosAnteriormente;
+    }
+
+    //El cargar pedidos segmentados me da la sección de pedidos nuevos.
     public static ArrayList<Pedido> cargarPedidosSegmentado(String filePath, LocalDateTime ahora) throws IOException {
         ArrayList<Pedido> pedidos = new ArrayList<>();
         Path path = Paths.get(filePath);
@@ -146,14 +157,16 @@ public class RoutingApplication {
             
             String[] parts = line.split(",");
             String tipo = parts[0];
-            int x = Integer.parseInt(parts[5]);
-            int y = Integer.parseInt(parts[6]);
+            double tanqueActual = Double.parseDouble(parts[1]);
+            double cargaActual = Double.parseDouble(parts[2]);
+            int x = Integer.parseInt(parts[3]);
+            int y = Integer.parseInt(parts[4]);
             
             int idx = count.getOrDefault(tipo, 0) + 1;
             count.put(tipo, idx);
             String codigo = String.format("%s%02d", tipo, idx);
             
-            camiones.add(new Camion(codigo, tipo, grid.getNodoAt(x, y), false, ahora));
+            camiones.add(new Camion(codigo, tipo, grid.getNodoAt(x, y), false, ahora, tanqueActual, cargaActual));
         }
         return camiones;
     }

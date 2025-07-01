@@ -15,13 +15,6 @@ public class PathFinder {
             LocalDateTime fechaMinimaLlegada, LocalDateTime fechaMinimaSalida,
             Camion camion) {
 
-        System.out.println("\n=========================== INICIO generarTrayectoria ===========================");
-        System.out.println("Hora simulada inicial: " + fechaSimulada +
-                "\nHora máxima llegada: " + fechaMaxima +
-                "\nHora mínima llegada: " + fechaMinimaLlegada +
-                "\nHora mínima salida: " + fechaMinimaSalida);
-        System.out.println("=================================================================================\n");
-
         LocalDateTime fechaActual = fechaSimulada.isBefore(fechaMinimaSalida) ? fechaMinimaSalida : fechaSimulada;
 
         while (!fechaActual.isAfter(fechaMaxima)) {
