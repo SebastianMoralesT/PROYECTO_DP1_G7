@@ -18,7 +18,6 @@ public class PathFinder {
         LocalDateTime fechaActual = fechaSimulada.isBefore(fechaMinimaSalida) ? fechaMinimaSalida : fechaSimulada;
 
         while (!fechaActual.isAfter(fechaMaxima)) {
-
             if (!camion.isDisponiblePorMantenimiento(fechaActual)) {
                 int segundosHastaDisponible = calcularTiempoFinMantenimiento(camion, fechaActual);
                 if (segundosHastaDisponible == -1 || fechaActual.plusSeconds(segundosHastaDisponible).isAfter(fechaMaxima)) {
@@ -101,19 +100,27 @@ public class PathFinder {
     }
 
     private static int calcularTiempoFinMantenimiento(Camion camion, LocalDateTime fechaActual) {
-        if (camion.getMantenimientos() == null) return -1;
-        int segundosMinimos = Integer.MAX_VALUE;
+    if (camion.getMantenimientos() == null) return -1;
+    
+    int segundosMinimos = Integer.MAX_VALUE;
 
-        for (TimeRange mantenimiento : camion.getMantenimientos()) {
-            if (mantenimiento.contains(fechaActual)) {
-                long segundosRestantes = java.time.Duration.between(fechaActual, mantenimiento.getEnd()).getSeconds();
-                if (segundosRestantes < segundosMinimos) {
-                    segundosMinimos = (int) segundosRestantes;
-                }
+    for (TimeRange mantenimiento : camion.getMantenimientos()) {
+        if (mantenimiento.contains(fechaActual)) {
+            long segundosRestantes = java.time.Duration.between(fechaActual, mantenimiento.getEnd()).getSeconds();
+            
+            // Aseguramos al menos 1 segundo de avance
+            if (segundosRestantes <= 0) {
+                segundosRestantes = 1;
+            }
+
+            if (segundosRestantes < segundosMinimos) {
+                segundosMinimos = (int) segundosRestantes;
             }
         }
-        return (segundosMinimos == Integer.MAX_VALUE) ? -1 : segundosMinimos;
     }
+    return (segundosMinimos == Integer.MAX_VALUE) ? -1 : segundosMinimos;
+}
+
 
     private static int calcularProximoCambio(Grid grid, LocalDateTime fechaActual) {
         int segundosMinimos = Integer.MAX_VALUE;

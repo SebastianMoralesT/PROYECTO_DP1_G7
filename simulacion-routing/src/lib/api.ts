@@ -60,10 +60,20 @@ export interface Bloqueo{
   fin: string;
 }
 
-export async function obtenerRutasOptimizadas(): Promise<RutaCamion[]> {
+export async function obtenerRutasOptimizadas(
+  ahora: string,
+  pedidos: Pedido[],
+  camiones: Camion[]
+): Promise<RutaCamion[]> {
   try {
-    const response = await fetch('http://localhost:8080/api/routing/optimize', { method: 'POST' });
-    
+    console.log("Payload enviado:", { ahora, pedidos, camiones });
+
+    const response = await fetch('http://localhost:8080/api/routing/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ahora, pedidos, camiones }),
+    });
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }

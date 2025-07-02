@@ -56,7 +56,7 @@ import java.util.*;
 public class RoutingService {
 
     static Grid grid = new Grid(71,51);
-    static int tiermpoSalto = 100;
+    static int tiermpoSalto = 30;
     static List<Planta> plantas = new ArrayList<>();
     static List<Pedido> pedidos = new ArrayList<>();
     static List<Camion> camiones = new ArrayList<>();

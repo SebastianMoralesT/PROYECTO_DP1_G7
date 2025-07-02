@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -29,18 +30,17 @@ public class RoutingController {
         this.routingService = routingService;
     }
     @PostMapping("/optimize")
-    public Solucion optimize() throws IOException {
-        LocalDateTime ahora = LocalDateTime.now()
-                .withDayOfMonth(25)
-                .withHour(12)
-                .withMinute(53)
-                .withSecond(20)
-                .withNano(0);
-        ArrayList<Pedido> pedidosPendientes = new ArrayList<>();
-        ArrayList<Camion> camionesActualizados = routingService.cargarCamiones("data/camiones.txt", ahora);
+    public Solucion optimize(@RequestBody OptimizeRequest request) throws IOException {
+        if (request == null || request.getPedidos() == null || request.getCamiones() == null || request.getAhora() == null) {
+            throw new IllegalArgumentException("Body incompleto o inválido");
+        }
+        LocalDateTime ahora = LocalDateTime.parse(request.getAhora());
+        ArrayList<Pedido> pedidosPendientes = new ArrayList<>(request.getPedidos());
+        ArrayList<Camion> camionesActualizados = new ArrayList<>(request.getCamiones());
 
         return routingService.optimize(ahora, pedidosPendientes, camionesActualizados);
     }
+
 
     @PostMapping("/obtenerPedidos") 
     public ArrayList<Pedido> obtenerPedidos() throws IOException {

@@ -3,7 +3,7 @@
 
 import { BsPlayFill, BsStopFill } from "react-icons/bs";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { obtenerRutasOptimizadas, obtenerPedidos, obtenerPlantas, obtenerBloqueos } from "../../lib/api";
+import { obtenerRutasOptimizadas, obtenerPedidos, obtenerPlantas, obtenerBloqueos, obtenerCamiones } from "../../lib/api";
 import type { Camion, SubRuta, Ubicacion, Planta, Pedido, Bloqueo } from '../../lib/api';
 import { useSimTime } from "@/components/weekly/TimeContext";
 
@@ -50,37 +50,67 @@ export default function SimulationMap() {
     }))
   );
 
-  // Cargar datos del backend
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [rutasOptimizadas, pedidos, plantas, bloqueosObtenidos] = await Promise.all([
-          obtenerRutasOptimizadas(),
-          obtenerPedidos(),
-          obtenerPlantas(),
-          obtenerBloqueos()
-        ]);
+// Cargar plantas y bloqueos solo una vez
+useEffect(() => {
+  const fetchInitialData = async () => {
+    try {
+      const [plantas, bloqueos] = await Promise.all([
+        obtenerPlantas(),
+        obtenerBloqueos()
+      ]);
+      setPlants(plantas);
+      setBloqueos(bloqueos);
+      setLoading(false); // Aquí indicas que ya cargaron los datos base
+    } catch (err) {
+      console.error('Error al cargar plantas o bloqueos:', err);
+      setError("Error al cargar datos iniciales.");
+      setLoading(false); // Incluso si falla, quita el loading para mostrar el error
+    }
+  };
 
-        // Procesar camiones y rutas
-        const camiones = rutasOptimizadas.map(r => r.camion);
-        const subRutas = rutasOptimizadas.map(r => r.subRutas);
+  fetchInitialData();
+}, []);
 
 
-        setTrucks(camiones);
-        setRoutes(subRutas);
-        setOrders(pedidos);
-        setPlants(plantas);
-        setBloqueos(bloqueosObtenidos);
-        setLoading(false);
-      } catch (err) {
-        setError('Error al cargar los datos de rutas');
-        setLoading(false);
-        console.error(err);
+// Optimizar rutas cada 15 minutos
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      console.log("Iniciando obtención de pedidos...");
+      const pedidos = await obtenerPedidos();
+      console.log("Pedidos obtenidos:", pedidos);
+
+      console.log("Iniciando obtención de camiones...");
+      const camiones = await obtenerCamiones();
+      console.log("Camiones obtenidos:", camiones);
+
+      if (!fechaInicio) {
+        console.warn('Fecha de inicio no establecida');
+        return;
       }
-    };
 
-    fetchData();
-  }, []);
+      console.log("Llamando a optimización...");
+      const rutasOptimizadas = await obtenerRutasOptimizadas(fechaInicio, pedidos, camiones);
+      console.log("Rutas optimizadas:", rutasOptimizadas);
+
+      const subRutas = rutasOptimizadas.map(r => r.subRutas);
+      const camionesActualizados = rutasOptimizadas.map(r => r.camion);
+
+      setTrucks(camionesActualizados);
+      setRoutes(subRutas);
+      setOrders(pedidos);
+
+    } catch (err) {
+      console.error('Error al optimizar rutas:', err);
+    }
+  };
+
+  if (!fechaInicio) return;
+
+  fetchData();
+}, [fechaInicio]);
+
+
 
   useEffect(() => {
     //console.log("SimTime:", simTime.toISOString());
@@ -176,18 +206,26 @@ export default function SimulationMap() {
     if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
 
     trucksProgressRef.current = routes.map((subRutas, index) => {
-      const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
-      const firstRoute = subRutas[0]?.trayectoria || [];
-      console.log("La subRuta, la hora de inicio es: "+ subRutas[0]?.horaInicio+ " en el nodo: "+subRutas[0]?.trayectoria);
-      return {
-        currentStep: 0,
-        progress: 0,
-        currentPos: [initialPos.posX, initialPos.posY] as [number, number],
-        targetPos: firstRoute.length > 0
-          ? [firstRoute[0].posX, firstRoute[0].posY] as [number, number]
-          : [initialPos.posX, initialPos.posY] as [number, number]
-      };
-    });
+  const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
+  let targetPos: [number, number];
+
+  if (subRutas.length > 0 && subRutas[0]?.trayectoria?.length > 0) {
+    const firstPoint = subRutas[0].trayectoria[0];
+    targetPos = [firstPoint.posX, firstPoint.posY];
+    console.log(`✅ Camión ${trucks[index]?.codigo} inicia en nodo ${targetPos}`);
+  } else {
+    targetPos = [initialPos.posX, initialPos.posY];
+    console.warn(`⚠️ Camión ${trucks[index]?.codigo} no tiene subrutas asignadas.`);
+  }
+
+  return {
+    currentStep: 0,
+    progress: 0,
+    currentPos: [initialPos.posX, initialPos.posY] as [number, number],
+    targetPos
+  };
+});
+
 
     // Dibujar estado inicial
     drawInitialState();

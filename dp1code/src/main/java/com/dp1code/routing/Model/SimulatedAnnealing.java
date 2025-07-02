@@ -103,11 +103,11 @@ public class SimulatedAnnealing {
             }
 
             System.out.println("Intentando con camión: " + c.getCodigo() + " desde " + start.getPosX() + "," + start.getPosY());
-
+           
             Map.Entry<ArrayList<Nodo>, LocalDateTime> resultado = PathFinder.generarTrayectoria(
                     grid, start, p.getDestino(), t, p.getPlazoMaximoEntrega(), p.getHoraPedido().plusHours(4), t, c
             );
-
+            
             ArrayList<Nodo> trayectoria = resultado.getKey();
             LocalDateTime horaSalida = resultado.getValue();
             LocalDateTime horaLlegada = horaSalida.plusSeconds((trayectoria.size() - 1) * 72);

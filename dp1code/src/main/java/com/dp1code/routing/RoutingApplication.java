@@ -23,7 +23,7 @@ import com.dp1code.routing.Model.*;
 public class RoutingApplication {
     static Grid grid = new Grid(71, 51);
     
-    static int tiermpoSalto = 100;
+    static int tiermpoSalto = 30;
     
     public static void main(String[] args) throws IOException {
         SpringApplication.run(RoutingApplication.class, args);
@@ -55,16 +55,16 @@ public class RoutingApplication {
             Camion c = mejor.getPlanesCamion().get(i).getCamion();
             System.out.println("El camion es: "+ c.getCodigo()+" y su glpRestante es: "+c.getGlpActual()+" y su glpTanque es: "+c.getGlpTanque());
             if(mejor.getPlanesCamion().get(i).getSubRutas().size() != 0){
-                /* 
+                 
                 for(int j=0; j < mejor.getPlanesCamion().get(i).getSubRutas().size(); j++){
-                    //System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
-                    //System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
-                    //System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
+                    System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
+                    System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
+                    System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
                     for(int k=0; k < mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size(); k++){
                         System.out.print("("+mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosX() + " " + mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosY()+")"); //+") y su hora de TN: "+ current.getPlanesCamion().get(i).getSubRutas().get(j).getTiemposNodo().get(k)
                     }
                     System.out.println("-");
-                }*/
+                }
             }
         }
         long t1 = System.nanoTime();
