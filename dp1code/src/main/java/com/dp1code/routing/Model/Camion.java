@@ -117,4 +117,8 @@ public class Camion {
         
         return true;
     }
+    public double calcularConsumo(double distanciaKm) {
+        double pesoTotal = this.pesoVacio + (this.glpActual * 0.5); 
+        return distanciaKm * pesoTotal / 180;
+    }
 }

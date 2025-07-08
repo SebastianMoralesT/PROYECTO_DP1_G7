@@ -26,4 +26,24 @@ public class Utilidades {
         }
         return nodos;
     }
+
+
+    public static boolean esPlantaPrincipal(Nodo nodo, List<Planta> plantas) {
+        return plantas.stream()
+            .filter(p -> p.getTipo().equals("PRINCIPAL"))
+            .anyMatch(p -> p.getUbicacion().equals(nodo));
+    }
+    public static boolean esPlantaSecundaria(Nodo nodo, List<Planta> plantas) {
+        return plantas.stream()
+            .filter(p -> p.getTipo().equals("SECUNDARIA"))
+            .anyMatch(p -> p.getUbicacion().equals(nodo));
+    }
+
+
+    public static Planta obtenerPlanta(Nodo nodo, List<Planta> plantas) {
+        return plantas.stream()
+            .filter(p -> p.getUbicacion().equals(nodo))
+            .findFirst()
+            .orElse(null);
+    }
 }

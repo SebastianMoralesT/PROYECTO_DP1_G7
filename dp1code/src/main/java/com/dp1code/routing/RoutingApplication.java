@@ -18,102 +18,281 @@ import java.util.List;
 import java.util.Map;
 
 import com.dp1code.routing.Model.*;
+import com.dp1code.routing.Service.*;;
 
 @SpringBootApplication
 public class RoutingApplication {
     static Grid grid = new Grid(71, 51);
     
-    static int tiermpoSalto = 100;
+    static int tiermpoSalto = 10;
+    static ArrayList<Planta> plantas = new ArrayList<>();
+    static ArrayList<Pedido> pedidos = new ArrayList<>();
+    static ArrayList<Camion> camiones = new ArrayList<>();
     
     public static void main(String[] args) throws IOException {
         SpringApplication.run(RoutingApplication.class, args);
-        
         LocalDateTime ahora = LocalDateTime.now()
-                .withDayOfMonth(25)
+                .withDayOfMonth(2)
                 .withHour(12)
-                .withMinute(53)
-                .withSecond(20)
+                .withMinute(13)
+                .withSecond(0)
                 .withNano(0);
-        System.out.println("El ahora es: "+ahora);
-
-        ArrayList<Pedido> pedidos = cargarPedidosSegmentado("data/pedidos.txt", ahora);
-        if(pedidos.isEmpty()){
-            System.out.println("Es vaciooo");
-        }
-        for(Pedido p : pedidos){
-            System.out.println("Los pedidos son: "+p.getCantidadGlp());
-        }
-        ArrayList<Camion> camiones = cargarCamiones("data/camiones.txt", ahora);
-        cargarBloqueos("data/bloqueos.txt");
-        cargarMantenimientos("data/mantenimiento.txt", camiones);
-        ArrayList<Planta> plantas = obtenerPlantas();
-        
-        SimulatedAnnealing sa = new SimulatedAnnealing(5000, 0.005, 100, plantas, camiones, pedidos, grid);
-        long t0 = System.nanoTime();
-        Solucion mejor = sa.optimize(ahora);
-        for(int i = 0; i < mejor.getPlanesCamion().size(); i++){
-            Camion c = mejor.getPlanesCamion().get(i).getCamion();
-            System.out.println("El camion es: "+ c.getCodigo()+" y su glpRestante es: "+c.getGlpActual()+" y su glpTanque es: "+c.getGlpTanque());
-            if(mejor.getPlanesCamion().get(i).getSubRutas().size() != 0){
-                /* 
-                for(int j=0; j < mejor.getPlanesCamion().get(i).getSubRutas().size(); j++){
-                    //System.out.println("La hora de salida de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraInicio());
-                    //System.out.println("Y el tiempo de la subRuta en minutos es: "+ (mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size()-1)*1.2);
-                    //System.out.println("La hora de llegada de la subRuta es: "+ mejor.getPlanesCamion().get(i).getSubRutas().get(j).getHoraFin());
-                    for(int k=0; k < mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().size(); k++){
-                        System.out.print("("+mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosX() + " " + mejor.getPlanesCamion().get(i).getSubRutas().get(j).getTrayectoria().get(k).getPosY()+")"); //+") y su hora de TN: "+ current.getPlanesCamion().get(i).getSubRutas().get(j).getTiemposNodo().get(k)
-                    }
-                    System.out.println("-");
-                }*/
-            }
-        }
-        long t1 = System.nanoTime();
-
-        double elapsedSec = (t1 - t0) / 1e9;
-        System.out.printf("Optimize() tardó %.3f segundos%n", elapsedSec);
-
-        double costeTotal = sa.cost(mejor);
-        System.out.printf("Función objetivo (coste total): %.3f%n", costeTotal);
-
-        int totalPedidos = 0;
-        for (PlanCamion plan : mejor.getPlanesCamion()) {
-            for (SubRuta sr : plan.getSubRutas()) {
-                if (sr.getPedido() != null)
-                    totalPedidos++;
-            }
-        }
-
-        double costeMedio = (totalPedidos > 0 ? costeTotal / totalPedidos : 0);
-        System.out.printf("Coste medio por pedido: %.3f%n", costeMedio);
-
-        double sumaFitness = 0;
-        for (PlanCamion plan : mejor.getPlanesCamion()) {
-            for (SubRuta sr : plan.getSubRutas()) {
-                if (sr.getPedido() != null) {
-                    double cPedido = costeTotal / totalPedidos;
-                    sumaFitness += 1.0 / (1.0 + cPedido);
+ /*
+        RoutingService routingService = new RoutingService();
+        Simulacion simulacion = new Simulacion(routingService.simulacionSemanal(ahora));
+        for(Solucion s : simulacion.getSoluciones()) {
+            System.out.println("=================SOLUCION:===================");
+            for(PlanCamion p : s.getPlanesCamion()){
+                System.out.println("Camion: "+p.getCamion().getCodigo());
+                for(SubRuta sub: p.getSubRutas()){
+                    System.out.println("Inicio: "+sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY() + " Fin: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY());
                 }
             }
         }
-        double fitnessMedio = (totalPedidos > 0 ? sumaFitness / totalPedidos : 0);
-        System.out.printf("Fitness promedio por pedido: %.3f%n%n%n%n", fitnessMedio);
+
+          
+        ArrayList<Solucion> soluciones = new ArrayList<>();
+        LocalDateTime fechaSimulada = ahora;
+
+        //Al inicio de la simulación.
+        cargarBloqueos("data/bloqueos.txt");
+        plantas = obtenerPlantas();
+        ArrayList<Pedido> pedidosNoEntregados = new ArrayList<>();
+        camiones = cargarCamiones("data/camiones.txt", ahora);
+        pedidos = cargarPedidosCompletos("data/pedidos.txt", ahora);
+        System.out.println("Al inicio de la simulación es: "+ fechaSimulada);
+        while(!fechaSimulada.isAfter(ahora.plusHours(1))){
+            //Esto varia
+            pedidos = cargarPedidosParaPlanificar("data/pedidos.txt", fechaSimulada, pedidosNoEntregados);
+            //System.out.println("COMIENZOOOOO EL WHILEEE CON: "+ fechaSimulada);
+            
+
+            ArrayList<Camion> camionesBackup = deepCopyCamiones(camiones);
+            ArrayList<Pedido> pedidosBackup = deepCopyPedidos(pedidos);
+            ArrayList<Planta> plantasBackup = deepCopyPlantas(plantas);
+
+            System.out.println("--------- Los pedidos ingresados para ver esta solucion son:");
+            for(Pedido p : pedidos){
+                System.out.println("Su id es: "+p.getId() + "con cantidad de glp: "+p.getCantidadGlp());
+            }
+            System.out.println("BackUP:--------- Los pedidos ingresados para ver esta solucion son:");
+            for(Pedido p : pedidosBackup){
+                System.out.println("Su id es: "+p.getId() + "con cantidad de glp: "+p.getCantidadGlp());
+            }
+            
+            SimulatedAnnealing sa = new SimulatedAnnealing( 5000, 0.005, 100, plantasBackup, camionesBackup, pedidosBackup, grid);
+            Solucion mejor = sa.optimize(fechaSimulada);
+            System.out.println("Una nueva solucion: ");
+            for(PlanCamion p : mejor.getPlanesCamion()){
+                System.out.println("El camion: "+p.getCamion());
+                for(SubRuta sub: p.getSubRutas()){
+                    if(sub.getPedido()!=null){
+                        System.out.println("Existe pedido: "+sub.getPedido().getId());
+                    }
+                }
+            }
+
+            
+
+
+            pedidosNoEntregados = actualizarDatos(mejor, fechaSimulada.plusMinutes(tiermpoSalto));
+
+            soluciones.add(mejor);
+            //System.out.println("Se agrego una nueva solucion al arreglo");
+
+            fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
+        }
+        System.out.println("La fecha Simulada final es: "+ fechaSimulada+" y obtuvimos "+soluciones.size()+" soluciones");*/
+    }
+
+    public static ArrayList<Camion> deepCopyCamiones(ArrayList<Camion> original) {
+        ArrayList<Camion> copia = new ArrayList<>();
+        for (Camion c : original) {
+            Camion nuevo = new Camion(
+                c.getCodigo(), 
+                c.getTipo(), 
+                c.getUbicacionActual(), 
+                c.isEnRuta(), 
+                c.getDisponibleDesde(), 
+                c.getGlpTanque(), 
+                c.getGlpActual()
+            );
+            nuevo.setPesoVacio(c.getPesoVacio());
+            nuevo.setCapacidadMaxima(c.getCapacidadMaxima());
+            nuevo.setHoraLibre(c.getHoraLibre());
+            
+            if (c.getSubRutasExistentes() != null) {
+                nuevo.setSubRutasExistentes(new ArrayList<>(c.getSubRutasExistentes()));
+            }
+            if (c.getMantenimientos() != null) {
+                nuevo.setMantenimientos(new ArrayList<>(c.getMantenimientos()));
+            }
+            
+            copia.add(nuevo);
+        }
+        return copia;
+    }
+
+    public static ArrayList<Pedido> deepCopyPedidos(ArrayList<Pedido> original) {
+        ArrayList<Pedido> copia = new ArrayList<>();
+        for (Pedido p : original) {
+            Pedido nuevo = new Pedido(
+                p.getId(), 
+                p.getDestino(), 
+                p.getIdCliente(), 
+                p.getCantidadGlp(), 
+                p.getHoraPedido(), 
+                p.getPlazoMaximoEntrega()
+            );
+            nuevo.setTiempoDescarga(p.getTiempoDescarga());
+            nuevo.setEntregado(p.isEntregado());
+            copia.add(nuevo);
+        }
+        return copia;
+    }
+
+    public static ArrayList<Planta> deepCopyPlantas(ArrayList<Planta> original) {
+        ArrayList<Planta> copia = new ArrayList<>();
+        for (Planta p : original) {
+            Planta nuevo = new Planta(p.getId(), p.getTipo(), p.getUbicacion());
+            nuevo.setCapacidadMaxima(p.getCapacidadMaxima());
+            nuevo.setGlpDisponible(p.getGlpDisponible());
+            nuevo.setSiguienteRecarga(p.getSiguienteRecarga());
+            nuevo.setIntervaloRecarga(p.getIntervaloRecarga());
+            copia.add(nuevo);
+        }
+        return copia;
+    }
+
+
+
+
+
+
+    private static ArrayList<Pedido> actualizarDatos(Solucion solucion, LocalDateTime fechaSimulada) {
+        ArrayList<Pedido> pedidosNoEntregados = new ArrayList<>();
+        for(PlanCamion plan : solucion.getPlanesCamion()){
+            if(plan.getSubRutas().size()!=0){
+                Camion c = new Camion();
+                for(Camion camion: camiones){
+                    if(camion.getCodigo() == plan.getCamion().getCodigo()){
+                        c = camion;
+                    }
+                }
+                //Primero verifiquemos si ya termino la ultima subRuta de este plan.
+                SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size()-1);
+                if(!last.getHoraFin().isAfter(fechaSimulada)){
+                  //  System.out.println("Entro aqui 1");
+                    c.setUbicacionActual(plantas.get(0).getUbicacion());
+                    for(SubRuta sub: plan.getSubRutas()){
+                        double glpConsumida = c.calcularConsumo(sub.getTrayectoria().size()-1);
+                        c.setGlpTanque(c.getGlpTanque() - glpConsumida);
+                        if(sub.getPedido()!=null){
+                            double cargaEntregada = sub.getPedido().getCantidadGlp();
+                            c.setGlpActual(c.getGlpActual() - cargaEntregada);
+
+                            sub.getPedido().setEntregado(true);
+                        }
+                        if(Utilidades.esPlantaSecundaria(sub.getTrayectoria().get(0), plantas)){
+                            Planta planta = Utilidades.obtenerPlanta(sub.getTrayectoria().get(0), plantas);
+                            double glpFaltante = c.getCapacidadMaxima() - c.getGlpTanque();
+                            planta.setGlpDisponible(planta.getGlpDisponible()-glpFaltante);
+                        }
+                        if(Utilidades.esPlantaPrincipal(sub.getTrayectoria().get(0), plantas)){
+                            c.setGlpTanque(25);
+                            c.setGlpActual(c.getCapacidadMaxima());
+                        }
+                        
+                    }
+                }else if(!plan.getSubRutas().get(0).getHoraInicio().isBefore(fechaSimulada)){ //Luego verifiquemos si aun no comienza.
+                   // System.out.println("Entro aqui 2");
+                    for(SubRuta sub: plan.getSubRutas()){
+                        if(sub.getPedido()!=null){
+                            pedidosNoEntregados.add(sub.getPedido());
+                        }
+                    }
+                } else{
+                    //Luego vemos si es que esta en ruta. Y buscamos en que subRuta esta, para ir checandolo desde ahí.
+                for(SubRuta sub : plan.getSubRutas()){
+                    if(sub.getTrayectoria().isEmpty()){
+                        continue;
+                    }
+                    //System.out.println("Entro aqui 3");
+                    //Si ya paso esa subRuta(A-> B).
+                    if(!sub.getHoraFin().isAfter(fechaSimulada)){
+                       // System.out.println("Entro aqui 3.1");
+                        double glpConsumida = c.calcularConsumo(sub.getTrayectoria().size()-1);
+                        c.setGlpTanque(c.getGlpTanque() - glpConsumida);
+                        c.setUbicacionActual(sub.getFin());
+                        if(sub.getPedido()!=null){
+                            sub.getPedido().setEntregado(true);
+                        }
+                        if(Utilidades.esPlantaSecundaria(sub.getTrayectoria().get(0), plantas)){
+                            Planta planta = Utilidades.obtenerPlanta(sub.getTrayectoria().get(0), plantas);
+                            double glpFaltante = c.getCapacidadMaxima() - c.getGlpTanque();
+                            planta.setGlpDisponible(planta.getGlpDisponible()-glpFaltante);
+                        }
+                        if(Utilidades.esPlantaPrincipal(sub.getTrayectoria().get(0), plantas)){
+                            c.setGlpTanque(25);
+                            c.setGlpActual(c.getCapacidadMaxima());
+                        }
+                    } else if (!sub.getHoraInicio().isBefore(fechaSimulada)){//Si aun no llego a esa SubRuta
+                        if(sub.getPedido()!=null){
+                            pedidosNoEntregados.add(sub.getPedido());
+                        }
+                    }else {//Si esta en plena SubRuta
+                        //System.out.println("Entro aqui 3.2");
+                        if(sub.getPedido()!=null){
+                            pedidosNoEntregados.add(sub.getPedido());
+                        }
+                        for (int i = 0; i < sub.getTrayectoria().size() - 1; i++) {
+                            LocalDateTime tiempoParcial = sub.getTiemposNodo().get(i);
+                            LocalDateTime tiempoParcialSiguiente = sub.getTiemposNodo().get(i + 1);
+
+                            if (fechaSimulada.isAfter(tiempoParcial) && fechaSimulada.isBefore(tiempoParcialSiguiente)) {
+                                double distancia = i;
+                                c.setUbicacionActual(sub.getTrayectoria().get(i));
+                                c.setGlpTanque(c.getGlpTanque() - c.calcularConsumo(distancia));
+                            }
+                        }
+
+                    }
+                }
+                }
+            }
+        }
+        return pedidosNoEntregados;
     }
 
     public static ArrayList<Planta> obtenerPlantas() throws IOException {
         ArrayList<Planta> plantas = new ArrayList<>();
         plantas.add(new Planta(1, "PRINCIPAL", grid.getNodoAt(12, 8)));
         plantas.add(new Planta(2, "SECUNDARIA", grid.getNodoAt(42, 42)));
-        plantas.add(new Planta(3, "SECUNDARIA", grid.getNodoAt(63, 3)));
+        plantas.add(new Planta(3, "SECUNDARIA", grid.getNodoAt(63, 8)));
         return plantas;
     }
 
     public static ArrayList<Pedido> cargarPedidosParaPlanificar(String filePath, LocalDateTime ahora, ArrayList<Pedido> pedidosNoEntregadosAnteriormente) throws IOException {
-        ArrayList<Pedido> pedidos = cargarPedidosSegmentado("data/pedidos.txt", ahora);
-        for(int i = 0; i < pedidos.size(); i++){
-            pedidosNoEntregadosAnteriormente.add(pedidos.get(i));
+        ArrayList<Pedido> pedidos = obtenerPedidos(ahora);
+
+        for (Pedido pedido : pedidos) {
+            boolean yaExiste = false;
+            
+            for (Pedido pedidoPrevio : pedidosNoEntregadosAnteriormente) {
+                if (pedido.getId() == pedidoPrevio.getId()) {
+                    yaExiste = true;
+                    break;  // Salimos del segundo bucle, ya sabemos que existe
+                }
+            }
+            
+            if (!yaExiste) {
+                pedidosNoEntregadosAnteriormente.add(pedido);
+            }
         }
+
         return pedidosNoEntregadosAnteriormente;
     }
+
 
     //El cargar pedidos segmentados me da la sección de pedidos nuevos.
     public static ArrayList<Pedido> cargarPedidosSegmentado(String filePath, LocalDateTime ahora) throws IOException {
@@ -143,6 +322,44 @@ public class RoutingApplication {
                 LocalDateTime plazoMax = horaPedido.plusHours(hLim);
                 pedidos.add(new Pedido(String.valueOf(i), grid.getNodoAt(x, y), id, m3, horaPedido, plazoMax));
             }
+        }
+        return pedidos;
+    }
+
+    public static ArrayList<Pedido> obtenerPedidos(LocalDateTime ahora) throws IOException {
+        ArrayList<Pedido> pedidosAObtener = new ArrayList<>();
+        for(Pedido p: pedidos){
+            if(!p.getHoraPedido().isAfter(ahora) && !p.getHoraPedido().isBefore(ahora.minusMinutes(tiermpoSalto))){
+                pedidosAObtener.add(p);
+            }
+        }
+        return pedidosAObtener;
+    }
+
+    public static ArrayList<Pedido> cargarPedidosCompletos(String filePath, LocalDateTime ahora) throws IOException {
+        Path path = Paths.get(filePath);
+        LocalDateTime base = ahora.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        
+        int i = 0;
+        for (String line : Files.readAllLines(path)) {
+            if (line.isBlank()) continue;
+            
+            String[] parts = line.split(":");
+
+            String[] ts = parts[0].split("[dhm]");
+            int d = Integer.parseInt(ts[0]);
+            int h = Integer.parseInt(ts[1]);
+            int m = Integer.parseInt(ts[2]);
+            LocalDateTime horaPedido = base.plusDays(d-1).plusHours(h).plusMinutes(m);
+            String[] vals = parts[1].split(",");
+            int x = Integer.parseInt(vals[0]);
+            int y = Integer.parseInt(vals[1]);
+            String id = vals[2];
+            int m3 = Integer.parseInt(vals[3].replace("m3", ""));
+            int hLim = Integer.parseInt(vals[4].replace("h", ""));
+            LocalDateTime plazoMax = horaPedido.plusHours(hLim);
+            i++;
+            pedidos.add(new Pedido(String.valueOf(i), grid.getNodoAt(x, y), id, m3, horaPedido, plazoMax));
         }
         return pedidos;
     }

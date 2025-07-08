@@ -19,31 +19,39 @@ interface TimeContextType {
 const TimeContext = createContext<TimeContextType | null>(null);
 
 export const TimeProvider = ({ children }: { children: ReactNode }) => {
-  const [simTime, setSimTime] = useState(new Date("2025-06-06T00:00:00")); // Inicial en 0
-  const [_startTime, _setStartTime] = useState(new Date("2025-06-06T00:00:00"));
+  // Inicializa con UTC explícito
+  const initialDate = new Date("2025-06-06T00:00:00Z"); // Nota la Z al final
+  
+  const [simTime, setSimTime] = useState<Date>(new Date("2025-06-06T00:00:00Z"));
+  const [_startTime, _setStartTime] = useState<Date>(new Date("2025-06-06T00:00:00Z"));
   const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  /*
-    const startSimulation = () => {
-      if (intervalRef.current) return; // prevenir múltiples intervalos
-      setIsRunning(true);
-      intervalRef.current = setInterval(() => {
-        setSimTime((prev) => new Date(prev.getTime() + 1000)); // avanzar 1s
-      }, 1000);
-    };*/
-  const startSimulation = () => {
-    if (intervalRef.current) return; // prevenir múltiples intervalos
 
-    // ✅ Reiniciar simTime al _startTime antes de comenzar
+  // Función para normalizar a UTC
+  const toUTC = (date: Date) => {
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  };
+
+  // Función para mostrar en hora local
+  const toLocal = (date: Date) => {
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+  };
+
+  const startSimulation = () => {
+    if (intervalRef.current) return;
+
+    // Usa la hora UTC para cálculos
     setSimTime(_startTime);
 
     setIsRunning(true);
     intervalRef.current = setInterval(() => {
-      setSimTime((prev) => new Date(prev.getTime() + 1000)); // avanzar 1s
-    }, 100);
+      setSimTime((prev) => new Date(prev.getTime() + 1000)); // Avanza 1s en UTC
+    }, 10);
   };
 
-
+  const getLocalTime = (date: Date) => {
+    return new Date(date.getTime());
+  };
   const stopSimulation = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -53,20 +61,16 @@ export const TimeProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setStartTime = (start: Date) => {
-    const startAtMidnight = new Date(start);
-    console.log('fecha a asignar: ', start)
-    startAtMidnight.setHours(0, 0, 0, 0);//¿ES NECESARIO?
-    //console.log('fecha a asignar: ', startAtMidnight)
-    /*_setStartTime(startAtMidnight);
-    setSimTime(startAtMidnight);*/
-    _setStartTime(start);
-    setSimTime(start);
+    // Convierte a UTC manteniendo el mismo instante temporal
+    const utcDate = new Date(start.getTime());
+    _setStartTime(utcDate);
+    setSimTime(utcDate);
   };
 
   return (
     <TimeContext.Provider
       value={{
-        simTime,
+        simTime: getLocalTime(simTime),
         isRunning,
         setStartTime,
         startSimulation,

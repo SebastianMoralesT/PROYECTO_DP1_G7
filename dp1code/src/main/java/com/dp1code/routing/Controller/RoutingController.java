@@ -5,6 +5,7 @@ import com.dp1code.routing.Model.Pedido;
 import com.dp1code.routing.Model.Camion;
 import com.dp1code.routing.Model.Bloqueo;
 import com.dp1code.routing.Model.Planta;
+import com.dp1code.routing.Model.Simulacion;
 import com.dp1code.routing.Service.RoutingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -12,11 +13,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -28,6 +33,30 @@ public class RoutingController {
     public RoutingController(RoutingService routingService) {
         this.routingService = routingService;
     }
+//@RequestBody OptimizeRequest request, LocalDateTime ahora = LocalDateTime.parse(request.getAhora());
+    @PostMapping("/simulacionSemanal")
+    public Simulacion simulacionSemanal(@RequestBody Map<String, String> payload) throws IOException {
+        String ahoraStr = payload.get("ahora") + "Z";
+        
+        Instant ahora = Instant.parse(ahoraStr);
+        LocalDateTime ahoraLocal = LocalDateTime.ofInstant(ahora, ZoneOffset.UTC).minusHours(5);
+
+        System.out.println("Esta ingresando con la hora local de: "+ahoraLocal);
+        Simulacion simulacion = new Simulacion(routingService.simulacionSemanal(ahoraLocal));
+        /* 
+        System.out.println("Se retorna: ");
+        for(Solucion s : simulacion.getSoluciones()) {
+            for(PlanCamion p: s.getPlanesCamion()) {
+                System.out.println("El camion: "+p.getCamion().getCodigo() + " y el size de subRutas es: "+p.getSubRutas().size());
+                for(SubRuta sub: p.getSubRutas()) {
+                    System.out.println(sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY() + " Fin: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY());
+                }
+            }
+        }*/
+        return simulacion;
+    }
+
+/* 
     @PostMapping("/optimize")
     public Solucion optimize() throws IOException {
         LocalDateTime ahora = LocalDateTime.now()
@@ -36,11 +65,8 @@ public class RoutingController {
                 .withMinute(53)
                 .withSecond(20)
                 .withNano(0);
-        ArrayList<Pedido> pedidosPendientes = new ArrayList<>();
-        ArrayList<Camion> camionesActualizados = routingService.cargarCamiones("data/camiones.txt", ahora);
-
-        return routingService.optimize(ahora, pedidosPendientes, camionesActualizados);
-    }
+        return routingService.optimize(ahora);
+    }*/
 
     @PostMapping("/obtenerPedidos") 
     public ArrayList<Pedido> obtenerPedidos() throws IOException {

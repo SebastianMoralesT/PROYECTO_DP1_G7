@@ -11,6 +11,14 @@ public class Pedido {
     private LocalDateTime horaPedido;
     private LocalDateTime plazoMaximoEntrega;
     private LocalDateTime tiempoDescarga;
+    private boolean entregado;
+    public boolean isEntregado() {
+        return entregado;
+    }
+
+    public void setEntregado(boolean entregado) {
+        this.entregado = entregado;
+    }
     private String idCliente;
 
     public String getIdCliente() {
@@ -32,6 +40,7 @@ public class Pedido {
         this.horaPedido = horaPedido;
         this.plazoMaximoEntrega = plazoMaximoEntrega;
         this.tiempoDescarga = tiempoDescarga;
+        this.entregado = false; 
     }
 
     public Pedido(String id, Nodo destino, String idCliente, double cantidadGlp, LocalDateTime horaPedido, LocalDateTime plazoMaximoEntrega) {

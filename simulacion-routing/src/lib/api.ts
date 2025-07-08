@@ -22,8 +22,10 @@ export interface Pedido {
   horaPedido: string;
   plazoMaximoEntrega: string;
   tiempoDescarga: number | null;
+  entregado: boolean;
   idCliente: string;
   estado?: string;  // Opcional si lo agregas después
+  canvasPosition?: { x: number; y: number; size: number }; 
 };
 
 
@@ -59,6 +61,32 @@ export interface Bloqueo{
   inicio: string;
   fin: string;
 }
+export interface Solucion{
+  planesCamion: RutaCamion[];
+  costo: number;
+}
+export async function obtenerSimulacionSemanal(fechaInicio: string): Promise<Solucion[]> {
+  try {
+    const response = await fetch('http://localhost:8080/api/routing/simulacionSemanal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ahora: fechaInicio })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.soluciones;
+  } catch (error) {
+    console.error('Error al obtener simulación:', error);
+    throw error;
+  }
+}
+
+
+
 
 export async function obtenerRutasOptimizadas(): Promise<RutaCamion[]> {
   try {

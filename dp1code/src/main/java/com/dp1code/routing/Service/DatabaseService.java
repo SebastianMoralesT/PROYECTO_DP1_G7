@@ -5,10 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class DatabaseService {
     // JDBC URL apuntando a tu esquema SISTEMA_DE_CAMIONES en RDS
     private static final String URL =
-        "jdbc:mysql://database-dp1.cbsn5wi5j7is.us-east-1.rds.amazonaws.com:3306/SISTEMA_DE_CAMIONES"
+        "jdbc:mysql://database-dp1.cbsn5wi5j7is.us-east-1.rds.amazonaws.com:3306/prueba_camiones"
       + "?useSSL=true&serverTimezone=UTC";
     private static final String USER     = "admin";
     private static final String PASSWORD = "desarrollo973L";
@@ -18,6 +21,7 @@ public class DatabaseService {
             Class.forName("com.mysql.cj.jdbc.Driver");
             return DriverManager.getConnection(URL, USER, PASSWORD);
         } catch (ClassNotFoundException e) {
+            e.printStackTrace();
             throw new SQLException("Driver MySQL no encontrado", e);
         }
     }
