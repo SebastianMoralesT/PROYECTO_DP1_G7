@@ -23,4 +23,18 @@ public class PlanCamion {
     public void setSubRutas(ArrayList<SubRuta> subRutas) { this.subRutas = subRutas; }
 
     public void addSubRuta(SubRuta sr) { this.subRutas.add(sr); }
+
+    @Override
+    public PlanCamion clone() {
+        Camion camionClonado = this.camion.clone();
+        ArrayList<SubRuta> subRutasClonadas = new ArrayList<>();
+
+        for (SubRuta sr : this.subRutas) {
+            subRutasClonadas.add(sr.clone());
+        }
+
+        return new PlanCamion(camionClonado, subRutasClonadas);
+    }
+
+
 }

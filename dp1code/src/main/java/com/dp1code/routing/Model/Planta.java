@@ -10,6 +10,14 @@ public class Planta {
     private Nodo ubicacion;
     private double capacidadMaxima;
     private double glpDisponible;
+    private double glpDisponibleSim;
+    public double getGlpDisponibleSim() {
+        return glpDisponibleSim;
+    }
+
+    public void setGlpDisponibleSim(double glpDisponibleSim) {
+        this.glpDisponibleSim = glpDisponibleSim;
+    }
     private LocalDateTime siguienteRecarga;
     private LocalDateTime intervaloRecarga;
 
@@ -35,10 +43,12 @@ public class Planta {
             case "PRINCIPAL":
                 this.capacidadMaxima = 10000;
                 this.glpDisponible=10000;
+                this.glpDisponibleSim=10000;
                 break;
             case "SECUNDARIA":
                 this.capacidadMaxima = 60.0;
                 this.glpDisponible=60.0;
+                this.glpDisponibleSim=60.0;
                 break;
             default:
                 System.out.println("Ingreso mal algún tipo de Planta.");

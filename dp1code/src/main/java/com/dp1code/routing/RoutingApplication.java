@@ -24,7 +24,7 @@ import com.dp1code.routing.Service.*;;
 public class RoutingApplication {
     static Grid grid = new Grid(71, 51);
     
-    static int tiermpoSalto = 10;
+    static int tiermpoSalto = 15;
     static ArrayList<Planta> plantas = new ArrayList<>();
     static ArrayList<Pedido> pedidos = new ArrayList<>();
     static ArrayList<Camion> camiones = new ArrayList<>();
@@ -32,25 +32,32 @@ public class RoutingApplication {
     public static void main(String[] args) throws IOException {
         SpringApplication.run(RoutingApplication.class, args);
         LocalDateTime ahora = LocalDateTime.now()
-                .withDayOfMonth(2)
+                .withDayOfMonth(6)
                 .withHour(12)
                 .withMinute(13)
                 .withSecond(0)
                 .withNano(0);
- /*
+/* 
         RoutingService routingService = new RoutingService();
         Simulacion simulacion = new Simulacion(routingService.simulacionSemanal(ahora));
+        
         for(Solucion s : simulacion.getSoluciones()) {
             System.out.println("=================SOLUCION:===================");
             for(PlanCamion p : s.getPlanesCamion()){
-                System.out.println("Camion: "+p.getCamion().getCodigo());
+                System.out.println("El camion: "+p.getCamion().getCodigo() + " y el size de subRutas es: "+p.getSubRutas().size());
+                //double glpTanqueSolucion = 25;
+                //double glpCargaSolucion = 25;
                 for(SubRuta sub: p.getSubRutas()){
-                    System.out.println("Inicio: "+sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY() + " Fin: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY());
+                    if(sub.getPedido()!=null){
+                        System.out.println("El pedido es: "+ sub.getPedido().getId()+" y su capacidad es: "+ sub.getPedido().getCantidadGlp()+" y su ubi es: "+ sub.getPedido().getDestino().getPosX()+", "+ sub.getPedido().getDestino().getPosY());
+                        //glpCargaSolucion = glpCargaSolucion - sub.getPedido().getCantidadGlp();
+                    }
+                    System.out.println("Inicio: "+sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY() + " Fin: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY()+" y la trayectoria size es: "+sub.getTrayectoria().size());
+                    //glpTanqueSolucion = glpTanqueSolucion - p.getCamion().calcularConsumo(sub.getTrayectoria().size()-1,glpCargaSolucion);
+
                 }
             }
         }
-
-          
         ArrayList<Solucion> soluciones = new ArrayList<>();
         LocalDateTime fechaSimulada = ahora;
 

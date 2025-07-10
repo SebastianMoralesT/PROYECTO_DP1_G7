@@ -117,4 +117,20 @@ public class SubRuta {
     public void setHoraFin(LocalDateTime horaFin) {
         this.horaFin = horaFin;
     }
+   @Override
+    public SubRuta clone() {
+        // Clonamos solo la lista de nodos (trayectoria), los nodos como objetos pueden mantenerse si son inmutables
+        ArrayList<Nodo> trayectoriaClonada = new ArrayList<>(this.trayectoria);
+        
+        return new SubRuta(
+            this.inicio,
+            this.fin,
+            this.pedido, // si Pedido es inmutable, esto es seguro
+            trayectoriaClonada,
+            this.horaInicio,
+            this.horaFin
+        );
+    }
+
+
 }

@@ -1,7 +1,11 @@
 package com.dp1code.routing.Model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.springframework.cglib.core.Local;
 
 public class Camion {
     private String codigo;
@@ -9,8 +13,14 @@ public class Camion {
     private double pesoVacio;
     private Nodo ubicacionActual;
     private double capacidadMaxima;
+
     private double glpActual;
+    private double glpActualSim;
+    
+
     private double glpTanque;
+    private double glpTanqueSim;
+
     private boolean enRuta;
     private LocalDateTime disponibleDesde;
     private LocalDateTime horaLibre;   // instante en que terminará la subruta en curso
@@ -46,6 +56,20 @@ public class Camion {
     public void setMantenimientos(List<TimeRange> mantenimientos) {
         this.mantenimientos = mantenimientos;
     }
+    public double getGlpActualSim() {
+        return glpActualSim;
+    }
+
+    public void setGlpActualSim(double glpActualSim) {
+        this.glpActualSim = glpActualSim;
+    }
+    public double getGlpTanqueSim() {
+        return glpTanqueSim;
+    }
+
+    public void setGlpTanqueSim(double glpTanqueSim) {
+        this.glpTanqueSim = glpTanqueSim;
+    }
 
     public Camion() {}
 
@@ -56,6 +80,8 @@ public class Camion {
         this.enRuta = enRuta;
         this.disponibleDesde = disponibleDesde;
         this.glpTanque=glpTanque;
+        this.glpTanqueSim=glpTanque;
+        this.glpActualSim = glpActual;
         this.glpActual = glpActual;
         AsignarCaracteristicasFlota(tipo);
     }
@@ -121,4 +147,65 @@ public class Camion {
         double pesoTotal = this.pesoVacio + (this.glpActual * 0.5); 
         return distanciaKm * pesoTotal / 180;
     }
+
+    public double calcularConsumo(double distanciaKm, double glpActual) {
+        double pesoTotal = this.pesoVacio + (glpActual * 0.5); 
+        return distanciaKm * pesoTotal / 180;
+    }
+
+    public boolean alcanzaParaRetornar(Grid grid, Camion c, Nodo ubiActualCamion, double glpActual, double glpTanque, LocalDateTime tiempo){
+        Map.Entry<ArrayList<Nodo>, LocalDateTime> resultado = PathFinder.generarTrayectoria(
+                        grid, ubiActualCamion, grid.getNodoAt(12, 8), tiempo, tiempo.plusMonths(6), tiempo, tiempo.plusMinutes(15), c);
+
+        ArrayList<Nodo> trayectoria = resultado.getKey();
+        double glpAConsumir = c.calcularConsumo(trayectoria.size()-1, glpActual);
+
+        if(glpTanque<glpAConsumir){
+            return false;
+        }
+
+        return true;
+    }
+    @Override
+public Camion clone() {
+    Camion clon = new Camion();
+    
+    clon.setCodigo(this.codigo);
+    clon.setTipo(this.tipo);
+    clon.setPesoVacio(this.pesoVacio);
+    clon.setCapacidadMaxima(this.capacidadMaxima);
+    
+    // Nodo se considera inmutable por tus equals/hashCode, pero puedes clonarlo si necesitas
+    clon.setUbicacionActual(this.ubicacionActual); // si planeas mutar este nodo, mejor clónalo
+
+    clon.setGlpActual(this.glpActual);
+    clon.setGlpTanque(this.glpTanque);
+    clon.setGlpActualSim(this.glpActualSim);
+    clon.setGlpTanqueSim(this.glpTanqueSim);
+
+    clon.setEnRuta(this.enRuta);
+    clon.setDisponibleDesde(this.disponibleDesde);
+    clon.setHoraLibre(this.horaLibre);
+
+    if (this.mantenimientos != null) {
+        List<TimeRange> copiaMantenimientos = new ArrayList<>();
+        for (TimeRange tr : this.mantenimientos) {
+            copiaMantenimientos.add(tr.clone()); // asegúrate de tener clone() en TimeRange o implementa copia
+        }
+        clon.setMantenimientos(copiaMantenimientos);
+    }
+
+    if (this.subRutasExistentes != null) {
+        List<SubRuta> copiaSubRutas = new ArrayList<>();
+        for (SubRuta sr : this.subRutasExistentes) {
+            copiaSubRutas.add(sr.clone()); // asegúrate de tener clone() en SubRuta
+        }
+        clon.setSubRutasExistentes(copiaSubRutas);
+    }
+
+    return clon;
+}
+
+    
+
 }

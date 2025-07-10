@@ -30,5 +30,11 @@ public class TimeRange {
         return (dateTime.isEqual(start) || dateTime.isAfter(start)) &&
                (dateTime.isBefore(end) || dateTime.isEqual(end));
     }
+
+    @Override
+public TimeRange clone() {
+    return new TimeRange(this.start, this.end); // suponiendo que usas LocalDateTime inmutable
+}
+
 }
 

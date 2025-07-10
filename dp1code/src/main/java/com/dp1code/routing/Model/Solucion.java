@@ -2,6 +2,7 @@ package com.dp1code.routing.Model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Solucion {
     private ArrayList<PlanCamion> planesCamion;
@@ -56,4 +57,20 @@ public class Solucion {
             System.out.println();
         }
     }
+
+    
+    @Override
+    public Solucion clone() {
+        ArrayList<PlanCamion> planesClonados = new ArrayList<>();
+
+        for (PlanCamion plan : this.planesCamion) {
+            planesClonados.add(plan.clone());
+        }
+
+        Solucion clon = new Solucion(planesClonados, this.costo);
+        return clon;
+    }
+
+
+
 }

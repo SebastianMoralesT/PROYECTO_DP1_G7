@@ -1,7 +1,9 @@
 package com.dp1code.routing.Controller;
 
 import com.dp1code.routing.Model.Solucion;
+import com.dp1code.routing.Model.SubRuta;
 import com.dp1code.routing.Model.Pedido;
+import com.dp1code.routing.Model.PlanCamion;
 import com.dp1code.routing.Model.Camion;
 import com.dp1code.routing.Model.Bloqueo;
 import com.dp1code.routing.Model.Planta;
@@ -12,8 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 // Los imports de Spring Web:
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.IOException;
@@ -23,7 +25,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/routing")
@@ -72,7 +73,7 @@ public class RoutingController {
     @PostMapping("/obtenerPedidos") 
     public ArrayList<Pedido> obtenerPedidos() throws IOException {
         LocalDateTime now = LocalDateTime.now()
-                .withDayOfMonth(25)
+                .withDayOfMonth(18)
                 .withHour(12)
                 .withMinute(53)
                 .withSecond(20)
@@ -101,7 +102,6 @@ public class RoutingController {
         return routingService.obtenerBloqueos("data/bloqueos.txt"); 
     }
 
-
     // Registrar un pedido:
     
 
@@ -125,3 +125,5 @@ public class RoutingController {
         public void setAhora(String ahora) { this.ahora = ahora; }
     }
 }
+
+

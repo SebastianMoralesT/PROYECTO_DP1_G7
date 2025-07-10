@@ -184,7 +184,7 @@ useEffect(() => {
 
         setTextoSubRutas(
           activeRoutes.map(subRuta => 
-            subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY})`).join("\n")
+            subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
           ).join("\n\n")
         );
 
