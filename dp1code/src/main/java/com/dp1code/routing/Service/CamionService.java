@@ -3,6 +3,7 @@ package com.dp1code.routing.Service;
 import com.dp1code.routing.Model.Camion;
 import com.dp1code.routing.Model.Nodo;
 import com.dp1code.routing.dto.CamionDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,6 +24,59 @@ public class CamionService {
         // Agrega lógica de persistencia si lo deseas
     }
 
+    public boolean actualizarUbicacionCamion(int posX, int posY, String codigoCamion) {
+        String sql = "UPDATE prueba_camiones.Nodo AS N INNER JOIN prueba_camiones.Camion AS C ON C.ubicacionActual_id = N.id SET N.posX = ?, N.posY = ? WHERE C.codigo = ?";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, posX);
+            ps.setInt(2, posY);
+            ps.setString(3, codigoCamion);
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public boolean actualizarGlpTanqueCamion(double glpTanque, String codigoCamion) {
+        String sql = "UPDATE Camion SET glpTanque = ? WHERE codigo = ?";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, glpTanque);
+            ps.setString(2, codigoCamion);
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public boolean actualizarGlpCargaCamion(double glpActual, String codigoCamion) {
+        String sql = "UPDATE Camion SET glpActual = ? WHERE codigo = ?";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, glpActual);
+            ps.setString(2, codigoCamion);
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    
     public ArrayList<Camion> obtenerTodosLosCamiones() {
         ArrayList<Camion> camiones = new ArrayList<>();
         String sql = """
@@ -98,6 +152,24 @@ public class CamionService {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Error al actualizar estado enRuta del camión con código: " + codigoCamion, e);
+        }
+    }
+
+    public void actualizarCamionesJson(List<Camion> camiones) {
+        String sql = "CALL prueba_camiones.actualizar_camiones_json(?)";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(camiones);
+
+            ps.setString(1, json);
+            ps.execute();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar camiones por JSON", e);
         }
     }
 }

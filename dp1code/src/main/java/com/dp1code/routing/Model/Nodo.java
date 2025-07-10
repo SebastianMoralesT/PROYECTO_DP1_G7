@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Nodo {
-
+    private int id;
     private int posX;
     private int posY;
     private boolean bloqueado;
@@ -59,6 +59,13 @@ public class Nodo {
     public void setBloqueado(boolean bloqueado) {
         this.bloqueado = bloqueado;
     }
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -77,7 +84,7 @@ public class Nodo {
         this.bloqueos.add(new TimeRange(inicio, fin));
     }
 
-    public synchronized boolean isBlockedAt(LocalDateTime dateTime) {
+    public boolean isBlockedAt(LocalDateTime dateTime) {
         for (TimeRange r : bloqueos) {
             if (r.contains(dateTime)) {
                 return true;

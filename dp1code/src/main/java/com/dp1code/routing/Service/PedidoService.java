@@ -1,6 +1,7 @@
 package com.dp1code.routing.Service;
 
 import com.dp1code.routing.dto.PedidoDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.Timestamp;
 import java.sql.Connection;
@@ -9,7 +10,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,7 +26,35 @@ public class PedidoService {
 
     @Autowired
     private DatabaseService databaseService;
+    public void actualizarPedidosJson(List<Pedido> pedidos) {
+        String sql = "CALL prueba_camiones.actualizar_pedidos_json(?)";
 
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            // Mapear destino.getId() como destinoId en el JSON
+            List<Map<String, Object>> pedidosMap = pedidos.stream().map(pedido -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", pedido.getId());
+                map.put("cantidadGlp", pedido.getCantidadGlp());
+                map.put("horaPedido", pedido.getHoraPedido());
+                map.put("plazoMaximoEntrega", pedido.getPlazoMaximoEntrega());
+                map.put("tiempoDescarga", pedido.getTiempoDescarga());
+                map.put("entregado", pedido.isEntregado());
+                return map;
+            }).toList();
+
+            String json = objectMapper.writeValueAsString(pedidosMap);
+            ps.setString(1, json);
+            ps.execute();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar pedidos por JSON", e);
+        }
+    }
     public ArrayList<Pedido> obtenerPedidosAnteriores(LocalDateTime fechaInput,LocalDateTime fin) {
         ArrayList<Pedido> pedidos = new ArrayList<>();
 
@@ -42,6 +73,7 @@ public class PedidoService {
                 //Nodo destino = serviceNodo.getNodoPorId(id_destino); // Asegúrate que este método no sea estático o usa
                                                                    // una instancia
                 Nodo destino = new Nodo();
+                destino.setId(rs.getInt("NodoID"));
                 destino.setPosX(rs.getInt("posX"));
                 destino.setPosY(rs.getInt("posY"));
                 destino.setBloqueado(rs.getBoolean("bloqueado"));

@@ -37,14 +37,18 @@ public class RoutingController {
     }
 //@RequestBody OptimizeRequest request, LocalDateTime ahora = LocalDateTime.parse(request.getAhora());
     @PostMapping("/simulacionSemanal")
-    public Simulacion simulacionSemanal(@RequestBody Map<String, String> payload) throws IOException {
+    public Solucion simulacionSemanal(@RequestBody Map<String, String> payload) throws IOException {
         String ahoraStr = payload.get("ahora") + "Z";
         
         Instant ahora = Instant.parse(ahoraStr);
         LocalDateTime ahoraLocal = LocalDateTime.ofInstant(ahora, ZoneOffset.UTC).minusHours(5);
 
         System.out.println("Esta ingresando con la hora local de: "+ahoraLocal);
-        Simulacion simulacion = new Simulacion(routingService.simulacionSemanal(ahoraLocal));
+        
+        Solucion solucion = routingService.simulacionSemanal(ahoraLocal);
+        
+        
+
         /* 
         System.out.println("Se retorna: ");
         for(Solucion s : simulacion.getSoluciones()) {
@@ -55,7 +59,7 @@ public class RoutingController {
                 }
             }
         }*/
-        return simulacion;
+        return solucion;
     }
 
 /* 

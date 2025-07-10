@@ -23,7 +23,8 @@ export default function SimulationMap() {
   const animationFrameRef = useRef<number>(0); // Guarda el ID de requestAnimationFrame para poder detenerlo si es necesario
   const lastTimeRef = useRef<number>(0); // Guarda el tiempo de la última iteración de animación
   //Datos de la simulación 
-  const [solucion, setSolucion] = useState<Solucion[]>([]);
+  const [listSolucion, setlistSolucion] = useState<Solucion[]>([]);
+  const [solucion, setSolucion] = useState<Solucion | null>(null);
   const [trucks, setTrucks] = useState<Camion[]>([]);
   const [plants, setPlants] = useState<Planta[]>([]);
   const [orders, setOrders] = useState<Pedido[]>([]);
@@ -116,18 +117,16 @@ useEffect(() => {
       if(fechaInicioRef.current===null) return;
       console.log("Esta ingresando con la fecha de inicio: "+fechaInicio);
       try {
-        const [solucionesObtenidas] = await Promise.all([
+        const solucionesObtenidas: Solucion[] = [];
+        const [solucion] = await Promise.all([
           obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""))
         ]);
 
-        // LIMPIA ESTADOS PREVIOS
-        setSolucion([]);
-        setTrucks([]);
-        setRoutes([]);
-        setOrders([]);
-        setActiveOrders([]);
-        setActiveTrucks([]);
-        setPositionsInitialized(false);
+        console.log("La solucion obtenida es: "+ solucion.planesCamion);
+
+        solucionesObtenidas.push(solucion);
+        console.log("Las soluciones obtenidas son: "+solucionesObtenidas.map(sol => sol.planesCamion));
+
         // Procesar camiones y rutas
         const camiones = solucionesObtenidas.map(r => r.planesCamion[0].camion);
         const subRutas = solucionesObtenidas.map(r => r.planesCamion[0].subRutas);
@@ -138,7 +137,7 @@ useEffect(() => {
           ).filter(pedido => pedido) as Pedido[];
         console.log("Los pedidos son: "+pedidos.map(p => p.id));
         
-        setSolucion(solucionesObtenidas);
+        setlistSolucion(solucionesObtenidas);
         setTrucks(camiones);
         setRoutes(subRutas);
         setOrders(pedidos);
@@ -157,18 +156,55 @@ useEffect(() => {
     fetchData2();
   }, [simulationTrigger]);
 
+// 1. Mueve esta función fuera del useEffect
+const fetchLoop = async () => {
+
+  if(fechaInicioRef.current===null) return;
+  let cancelado = false;
+  let fechaActual = new Date(fechaInicioRef.current);
+
+  while (!cancelado) {
+    try {
+      const isoStr = fechaActual.toISOString().replace("Z", "");
+      console.log("La nueva fecha es:", isoStr);
+
+      const [solucion] = await Promise.all([
+        obtenerSimulacionSemanal(isoStr)
+      ]);
+
+      setlistSolucion(prev => [...prev, solucion]);
+      fechaActual = new Date(fechaActual.getTime() + 4 * 60 * 1000);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error("Error al obtener solución:", error);
+      break;
+    }
+  }
+
+  return () => { cancelado = true; };
+};
+
+useEffect(() => {
+  if (fechaInicioRef.current !== null) {
+    fetchLoop();
+  }
+}, [fechaInicioRef.current]);
+
+
+
   useEffect(() => {
-    if (solucion.length === 0) return;
+    if (listSolucion.length === 0) return;
     
     const intervalo = setInterval(() => {
       if (!fechaInicioRef.current) return;
 
       const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
       const minutosSimulados = Math.floor(transcurridoMs / (1000 * 60));
-      const indice = Math.floor(minutosSimulados / 25);
-      if (indice < solucion.length) {
-        const sol = solucion[indice];
-        
+      const indice = Math.floor(minutosSimulados / 4);
+
+      if (indice < listSolucion.length) {
+        const sol = listSolucion[indice];
+
         // Actualiza solo los camiones y rutas activas
         const activeTrucks = sol.planesCamion.map(plan => plan.camion);
         const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
@@ -201,7 +237,7 @@ useEffect(() => {
     }, 1000);
 
     return () => clearInterval(intervalo);
-  }, [solucion]);
+  }, [listSolucion]);
 
   
   useEffect(() => {
@@ -518,24 +554,21 @@ useEffect(() => {
 
 // Añade este efecto para la animación pulsante
 useEffect(() => {
-  console.log("selectedOrder CAMBIÓ:", selectedOrder);
+  //console.log("selectedOrder CAMBIÓ:", selectedOrder);
   if (!selectedOrder) {
     setHighlightPulse(0); // Resetear animación
     return;
   }
-  console.log("Posición del pedido:", {
-      x: selectedOrder.destino.posX,
-      y: selectedOrder.destino.posY
-    });
+ 
 
   if (highlightPulse !== 0) return;
 
   let animationId: number;
   const animate = () => {
     setHighlightPulse(prev => (prev + 0.02) % (Math.PI * 2));
-    console.log("Esta ingresando a animate")
+   // console.log("Esta ingresando a animate")
     animationId = requestAnimationFrame(animate);
-    console.log("Salio del animate")
+   // console.log("Salio del animate")
   };
 
   animationId = requestAnimationFrame(animate);
@@ -550,7 +583,6 @@ useEffect(() => {
   const ctx = canvasRef.current.getContext("2d");
   
   if (!ctx) return;
-  console.log("Ingreso aqui 2");
   const cols = 70;
   const rows = 50;
   const spacing = 13;
@@ -579,14 +611,14 @@ useEffect(() => {
     routesRef.current.forEach(subRutas => {
       subRutas.forEach(subRuta => {
         if (subRuta.pedido && subRuta.pedido.id === order.id) {
-          console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+subRuta.horaFin);
+          //console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+subRuta.horaFin);
           horaFin = new Date(subRuta.horaFin).getTime();
         }
       });
     });
 
     
-    console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+horaFin);
+    //console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+horaFin);
     if (horaFin !== null &&
       simTimeRef.current.getTime() >= horaInicio &&
       simTimeRef.current.getTime() <= horaFin) {
@@ -621,6 +653,7 @@ useEffect(() => {
   
   routesRef.current.forEach((subRutas, index) => {
     const progressData = trucksProgressRef.current[index];
+    if (!progressData) return;
     const truck = trucksRef.current[index];
     //console.log("El truck es: "+truck+" y el subRutas son: "+subRutas+ " y la subRutas.length es:   "+subRutas.length);
     if (!truck || !subRutas || subRutas.length === 0) return;
@@ -676,12 +709,12 @@ useEffect(() => {
     const interpolatedX = progressData.currentPos[0] + (progressData.targetPos[0] - progressData.currentPos[0]) * t;
     const interpolatedY = progressData.currentPos[1] + (progressData.targetPos[1] - progressData.currentPos[1]) * t;
 
-    console.log("Llego aqui")
+   // console.log("Llego aqui")
     drawTruck(ctx, interpolatedX, interpolatedY, truck, spacing, progressData.targetPos, progressData.currentPos, false);
   });
-  console.log("Al selectOrder ingreso con: "+ selectedOrder);
+ // console.log("Al selectOrder ingreso con: "+ selectedOrder);
   if (selectedOrderRef.current) {
-    console.log("Ingresooooo aquiiii")
+  //  console.log("Ingresooooo aquiiii")
     const pulseSize = 15 + Math.sin(highlightPulse) * 5;
     const pulseAlpha = 0.4 + Math.sin(highlightPulse * 2) * 0.3;
 

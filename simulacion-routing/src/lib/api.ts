@@ -65,7 +65,7 @@ export interface Solucion{
   planesCamion: RutaCamion[];
   costo: number;
 }
-export async function obtenerSimulacionSemanal(fechaInicio: string): Promise<Solucion[]> {
+export async function obtenerSimulacionSemanal(fechaInicio: string): Promise<Solucion> {
   try {
     const response = await fetch('http://localhost:8080/api/routing/simulacionSemanal', {
       method: 'POST',
@@ -78,7 +78,7 @@ export async function obtenerSimulacionSemanal(fechaInicio: string): Promise<Sol
     }
 
     const data = await response.json();
-    return data.soluciones;
+    return data;
   } catch (error) {
     console.error('Error al obtener simulación:', error);
     throw error;

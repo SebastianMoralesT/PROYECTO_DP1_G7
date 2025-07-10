@@ -134,7 +134,7 @@ export default function TransportPanel() {
       )}
 
       {/* Panel principal */}
-      <div className={`fixed right-0 top-12 h-150 bg-white border-l shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      <div className={`fixed right-0 top-12 h-190 bg-white border-l shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
            style={{ width: '550px' }}>
         <div className="h-full flex flex-col">
           {/* Header */}

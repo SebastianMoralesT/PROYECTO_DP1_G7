@@ -2,6 +2,8 @@ package com.dp1code.routing.Service;
 
 import com.dp1code.routing.Model.Nodo;
 import com.dp1code.routing.Model.Planta;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
@@ -45,6 +47,41 @@ public class PlantaService {
         }
 
         return plantas;
+    }
+
+    public boolean actualizarGlpPlanta(double glpActual, int id) {
+        String sql = "UPDATE Planta SET glpDisponible = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, glpActual);
+            ps.setInt(2, id);
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public void actualizarPlantasJson(List<Planta> plantas) {
+        String sql = "CALL prueba_camiones.actualizar_plantas_json(?)";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(plantas);
+
+            ps.setString(1, json);
+            ps.execute();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar plantas por JSON", e);
+        }
     }
 
 }
