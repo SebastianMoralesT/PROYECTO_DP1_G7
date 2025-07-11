@@ -77,7 +77,7 @@ public class RoutingService {
         return mejor;
     }*/
 
-    public static Solucion simulacionSemanal(LocalDateTime ahora) throws IOException{
+    public static Solucion simulacionSemanal(LocalDateTime fechaInput, LocalDateTime ahora) throws IOException{
     
         //ArrayList<Solucion> soluciones = new ArrayList<>();
         LocalDateTime fechaSimulada = ahora;
@@ -90,7 +90,11 @@ public class RoutingService {
         
         ArrayList<Camion> camiones = camionService.obtenerTodosLosCamiones();
         
-        ArrayList<Pedido> pedidos = pedidoService.obtenerPedidosAnteriores(ahora.minusMinutes(tiermpoSalto), ahora);
+        System.out.println("La fecha Input que esta ingresando es: "+ fechaInput+" y la de ahora es: "+ ahora);
+        ArrayList<Pedido> pedidos = pedidoService.obtenerPedidosAnteriores(fechaInput.minusMinutes(tiermpoSalto), ahora);
+        for(Pedido p : pedidos){
+            System.out.println("El pedido con id:"+p.getId()+" y glp: "+p.getCantidadGlp());
+        }
         
         
         //ArrayList<Camion> camionesBackup = deepCopyCamiones(camiones);
@@ -380,33 +384,33 @@ public class RoutingService {
             }
             }
         }
-        System.out.println("COMENZOOOOOOO CON LA BD:");
+      //  System.out.println("COMENZOOOOOOO CON LA BD:");
        actualizado = true;
         for(Planta planta: plantas){
             actualizado = plantaService.actualizarGlpPlanta(planta.getGlpDisponible(), planta.getId());
-            System.out.println("Actualizando las plantas");
+            //System.out.println("Actualizando las plantas");
             if(!actualizado){
                 System.out.println("Ocurrio un error: Actualizar Planta");
             }
         }
         for(Camion camion: camiones){
             actualizado = camionService.actualizarGlpTanqueCamion(camion.getGlpTanque(), camion.getCodigo());
-             System.out.println("Actualizando los tanques de camiones");
+            // System.out.println("Actualizando los tanques de camiones");
             if(!actualizado){
                 System.out.println("Ocurrio un error: Actualizar Tanque Camion");
             }
             actualizado = camionService.actualizarGlpCargaCamion(camion.getGlpActual(), camion.getCodigo());
-            System.out.println("Actualizando las cargas de camiones");
+          //  System.out.println("Actualizando las cargas de camiones");
             if(!actualizado){
                 System.out.println("Ocurrio un error: Actualizar Carga Camion");
             }
             actualizado = camionService.actualizarUbicacionCamion(camion.getUbicacionActual().getPosX(), camion.getUbicacionActual().getPosY(), camion.getCodigo());
-            System.out.println("Actualizando las ubicaciones de camiones");
+          //  System.out.println("Actualizando las ubicaciones de camiones");
             if(!actualizado){
                 System.out.println("Ocurrio un error: Actualizar Ubi Camion");
             }
         }
-        System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
+       // System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
     }
 
 

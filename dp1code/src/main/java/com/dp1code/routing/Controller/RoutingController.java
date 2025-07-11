@@ -39,13 +39,16 @@ public class RoutingController {
     @PostMapping("/simulacionSemanal")
     public Solucion simulacionSemanal(@RequestBody Map<String, String> payload) throws IOException {
         String ahoraStr = payload.get("ahora") + "Z";
-        
+        String fechaVariableStr = payload.get("fechaVariable") + "Z";
+
         Instant ahora = Instant.parse(ahoraStr);
+        Instant fechaVariable = Instant.parse(fechaVariableStr);
         LocalDateTime ahoraLocal = LocalDateTime.ofInstant(ahora, ZoneOffset.UTC).minusHours(5);
+        LocalDateTime fechaVariableLocal = LocalDateTime.ofInstant(fechaVariable, ZoneOffset.UTC).minusHours(5);
 
         System.out.println("Esta ingresando con la hora local de: "+ahoraLocal);
         
-        Solucion solucion = routingService.simulacionSemanal(ahoraLocal);
+        Solucion solucion = routingService.simulacionSemanal(ahoraLocal, fechaVariableLocal);
         
         
 

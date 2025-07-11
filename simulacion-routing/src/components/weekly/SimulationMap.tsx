@@ -59,7 +59,7 @@ const [highlightPulse, setHighlightPulse] = useState(0);
   
   const trucksProgressRef = useRef(
     routes.map(() => ({
-      currentStep: 0,
+      currentStep: -1,
       progress: 0,
       currentPos: [0, 0] as [number, number],
       targetPos: [0, 0] as [number, number]
@@ -119,7 +119,7 @@ useEffect(() => {
       try {
         const solucionesObtenidas: Solucion[] = [];
         const [solucion] = await Promise.all([
-          obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""))
+          obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), fechaInicioRef.current.toISOString().replace("Z", ""))
         ]);
 
         console.log("La solucion obtenida es: "+ solucion.planesCamion);
@@ -156,7 +156,6 @@ useEffect(() => {
     fetchData2();
   }, [simulationTrigger]);
 
-// 1. Mueve esta función fuera del useEffect
 const fetchLoop = async () => {
 
   if(fechaInicioRef.current===null) return;
@@ -169,7 +168,7 @@ const fetchLoop = async () => {
       console.log("La nueva fecha es:", isoStr);
 
       const [solucion] = await Promise.all([
-        obtenerSimulacionSemanal(isoStr)
+        obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr)
       ]);
 
       setlistSolucion(prev => [...prev, solucion]);
@@ -188,7 +187,7 @@ useEffect(() => {
   if (fechaInicioRef.current !== null) {
     fetchLoop();
   }
-}, [fechaInicioRef.current]);
+}, [simulationTrigger]);
 
 
 
@@ -233,6 +232,8 @@ useEffect(() => {
 
         setActiveOrders(activeOrders);
         setActiveTrucks(activeTrucks);
+        
+
       }
     }, 1000);
 
@@ -281,8 +282,8 @@ useEffect(() => {
     loadImages();
   }, []);
 
-  useEffect(() => {
-  if (!Object.values(imagesLoaded).every(Boolean) || loading || positionsInitialized) return;
+useEffect(() => {
+  if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
 
   trucksProgressRef.current = routes.map((subRutas, index) => {
     const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
@@ -297,9 +298,9 @@ useEffect(() => {
     };
   });
 
-  setPositionsInitialized(true);
   drawInitialState();
-}, [imagesLoaded, loading, trucks, plants, orders, routes, positionsInitialized]);
+}, [imagesLoaded, loading, trucks, routes]);
+
 
 
 

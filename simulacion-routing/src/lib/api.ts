@@ -65,12 +65,12 @@ export interface Solucion{
   planesCamion: RutaCamion[];
   costo: number;
 }
-export async function obtenerSimulacionSemanal(fechaInicio: string): Promise<Solucion> {
+export async function obtenerSimulacionSemanal(fechaInicio: string, fechaVariable: string): Promise<Solucion> {
   try {
     const response = await fetch('http://localhost:8080/api/routing/simulacionSemanal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ahora: fechaInicio })
+      body: JSON.stringify({ ahora: fechaInicio , fechaVariable: fechaVariable }),
     });
 
     if (!response.ok) {

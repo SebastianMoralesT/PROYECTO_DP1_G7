@@ -80,11 +80,12 @@ public class Nodo {
         return Objects.hash(posX, posY);
     }
 
-    public void agregarBloqueo(LocalDateTime inicio, LocalDateTime fin) {
+    public synchronized void agregarBloqueo(LocalDateTime inicio, LocalDateTime fin) {
         this.bloqueos.add(new TimeRange(inicio, fin));
     }
 
-    public boolean isBlockedAt(LocalDateTime dateTime) {
+
+    public synchronized boolean isBlockedAt(LocalDateTime dateTime) {
         for (TimeRange r : bloqueos) {
             if (r.contains(dateTime)) {
                 return true;
