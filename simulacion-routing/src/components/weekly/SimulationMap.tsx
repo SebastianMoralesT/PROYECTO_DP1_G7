@@ -189,56 +189,64 @@ useEffect(() => {
   }
 }, [simulationTrigger]);
 
+const indiceRef = useRef(0);
+const nextUpdateMsRef = useRef(0);
 
 
-  useEffect(() => {
-    if (listSolucion.length === 0) return;
-    
-    const intervalo = setInterval(() => {
-      if (!fechaInicioRef.current) return;
+useEffect(() => {
+  if (listSolucion.length === 0) return;
 
-      const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
-      const minutosSimulados = Math.floor(transcurridoMs / (1000 * 60));
-      const indice = Math.floor(minutosSimulados / 4);
+  const intervalo = setInterval(() => {
+    if (!fechaInicioRef.current) return;
 
-      if (indice < listSolucion.length) {
-        const sol = listSolucion[indice];
+    const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
 
-        // Actualiza solo los camiones y rutas activas
-        const activeTrucks = sol.planesCamion.map(plan => plan.camion);
-        const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
-        const activeOrders = sol.planesCamion.flatMap(plan => 
-            plan.subRutas
-              .filter(subRuta => subRuta.pedido)
-              .map(subRuta => subRuta.pedido)
-          ).filter(pedido => pedido) as Pedido[];
-        
-        setTextoPedidos(
-          activeOrders.map(p => `Pedido ${p.id} en (${p.destino.posX}, ${p.destino.posY}) HoraP:${p.horaPedido} y entregado: ${p.entregado}`).join("\n")
-        );
+    // Si es la primera vez, inicializa el valor de nextUpdateMs
+    if (nextUpdateMsRef.current === 0) {
+      nextUpdateMsRef.current = 0; // Primer umbral a los 4 minutos
+    }
 
-        setTextoSubRutas(
-          activeRoutes.map(subRuta => 
-            subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
-          ).join("\n\n")
-        );
+    // Si ya pasamos el siguiente umbral de actualización
+    if (transcurridoMs >= nextUpdateMsRef.current) {
+      const sol = listSolucion[indiceRef.current];
+      if (!sol) return;
 
-        //console.log("Los pedidos obtenidos son: "+ activeOrders.map(pedido => pedido.id+ " y su ubicacion es: "+pedido.destino.posX+","+pedido.destino.posY).join("\n"));
-        //console.log("Las SubRutas obtenidas son: "+ activeRoutes.map(subRuta =>subRuta.map(r =>"Hora Inicio: "+r.horaInicio +"("+r.inicio.posX+","+r.inicio.posY+") ("+r.fin.posX+","+r.fin.posY+") ")).join("\n"));
-        
-        setTrucks(activeTrucks);
-        setRoutes(activeRoutes);
-        setOrders(activeOrders);
+      indiceRef.current += 1;
+      nextUpdateMsRef.current += 240000; // Configura el próximo umbral
 
-        setActiveOrders(activeOrders);
-        setActiveTrucks(activeTrucks);
-        
+      console.log("Actualizando con índice:", indiceRef.current - 1);
+      console.log("TranscurridosMs:", transcurridoMs);
+      console.log("Longitud de listSolucion:", listSolucion.length);
 
-      }
-    }, 1000);
+      const activeTrucks = sol.planesCamion.map(plan => plan.camion);
+      const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
+      const activeOrders = sol.planesCamion.flatMap(plan =>
+        plan.subRutas
+          .filter(subRuta => subRuta.pedido)
+          .map(subRuta => subRuta.pedido)
+      ).filter(pedido => pedido) as Pedido[];
 
-    return () => clearInterval(intervalo);
-  }, [listSolucion]);
+      setTextoPedidos(
+        activeOrders.map(p => `Pedido ${p.id} en (${p.destino.posX}, ${p.destino.posY}) HoraP:${p.horaPedido} y entregado: ${p.entregado}`).join("\n")
+      );
+
+      setTextoSubRutas(
+        activeRoutes.map(subRuta =>
+          subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
+        ).join("\n\n")
+      );
+
+      setTrucks(activeTrucks);
+      setRoutes(activeRoutes);
+      setOrders(activeOrders);
+      setActiveOrders(activeOrders);
+      setActiveTrucks(activeTrucks);
+    }
+  }, 1000);
+
+  return () => clearInterval(intervalo);
+}, [listSolucion]);
+
 
   
   useEffect(() => {

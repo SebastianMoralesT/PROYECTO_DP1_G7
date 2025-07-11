@@ -107,7 +107,7 @@ public class RoutingService {
         //pedidosNoEntregados = actualizarDatos(mejor, fechaSimulada.plusMinutes(tiermpoSalto), camiones, plantas);
         
         new Thread(() -> {
-            actualizarDatosBD(mejor, fechaSimulada, camiones, plantas);
+            actualizarDatosBD(mejor,fechaSimulada, fechaSimulada.plusMinutes(tiermpoSalto), camiones, plantas);
         }).start();
         //System.out.println("Se agrego una nueva solucion al arreglo");
         //soluciones.add(mejor);
@@ -268,7 +268,7 @@ public class RoutingService {
         }
         return pedidosNoEntregados;
     }
-    private static void actualizarDatosBD(Solucion solucion, LocalDateTime fechaSimulada, ArrayList<Camion> camiones, ArrayList<Planta> plantas){ 
+    private static void actualizarDatosBD(Solucion solucion, LocalDateTime fechaSimuladaAnterior, LocalDateTime fechaSimulada, ArrayList<Camion> camiones, ArrayList<Planta> plantas){ 
         CamionService camionService = new CamionService();
         PedidoService pedidoService = new PedidoService();
         PlantaService plantaService = new PlantaService();
@@ -408,6 +408,23 @@ public class RoutingService {
           //  System.out.println("Actualizando las ubicaciones de camiones");
             if(!actualizado){
                 System.out.println("Ocurrio un error: Actualizar Ubi Camion");
+            }
+        }
+        if (fechaSimuladaAnterior.toLocalDate().isBefore(fechaSimulada.toLocalDate())) {
+            for (Planta planta : plantas) {
+                if(Utilidades.esPlantaPrincipal(planta.getUbicacion(), plantas)){
+                    planta.setGlpDisponible(10000);
+                    actualizado = plantaService.actualizarGlpPlanta(planta.getGlpDisponible(), planta.getId());;
+                    if(!actualizado){
+                        System.out.println("Ocurrio un error: Actualizar Planta");
+                    }
+                    continue;
+                }
+                planta.setGlpDisponible(60);
+                actualizado = plantaService.actualizarGlpPlanta(planta.getGlpDisponible(), planta.getId());;
+                if(!actualizado){
+                    System.out.println("Ocurrio un error: Actualizar Planta");
+                }
             }
         }
        // System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
