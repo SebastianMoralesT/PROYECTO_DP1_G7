@@ -17,6 +17,9 @@ import com.dp1code.routing.Model.Solucion;
 import com.dp1code.routing.Model.SubRuta;
 import com.dp1code.routing.Model.TimeRange;
 import com.dp1code.routing.Model.Utilidades;
+import java.time.Duration;
+
+
 import com.dp1code.routing.Model.Pedido;
 import com.dp1code.routing.Model.PlanCamion;
 import com.dp1code.routing.Model.Camion;
@@ -49,7 +52,7 @@ import java.lang.Thread;
 public class RoutingService {
 
     static Grid grid = new Grid(71,51);
-    static int tiermpoSalto = 4;
+    static int tiermpoSalto = 5;
     
 
     public RoutingService() {
@@ -79,17 +82,48 @@ public class RoutingService {
 
     public static Solucion simulacionSemanal(LocalDateTime fechaInput, LocalDateTime ahora) throws IOException{
     
-        //ArrayList<Solucion> soluciones = new ArrayList<>();
-        LocalDateTime fechaSimulada = ahora;
         PedidoService pedidoService = new PedidoService();
         CamionService camionService = new CamionService();
         PlantaService plantaService = new PlantaService();
+        boolean actualizado = true;
+        System.out.println("inicioooooooooooooooooooooooooooooooo de simulacion");
+        if(fechaInput.equals(ahora)){
+            System.out.println("INGRESOO A ACTUALIZAR DATOS");
+            actualizado = plantaService.actualizarTodasLasPlantas();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion de todas las plantas.");
+            }
+            System.out.println("ACTUALIZOO PLANTAS");
+            actualizado = camionService.actualizarGlpCargaTodosCamion();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Carga Camion.");
+            }
+            actualizado = camionService.actualizarGlpTanqueTodosCamion();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Tanque Camion.");
+            }
+            actualizado = camionService.actualizarUbicacionTodosCamion();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Ubi Camion.");
+            }
+            System.out.println("ACTUALIZOO CAMIONES");
+            actualizado = pedidoService.actualizarTodosPedidosANoEntregados();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Pedidos.");
+            }
+            System.out.println("TERMINO DE ACTUALIZAR DATOS.");
+        }
+        //ArrayList<Solucion> soluciones = new ArrayList<>();
+        LocalDateTime fechaSimulada = ahora;
+        
         //Al inicio de la simulación.
         cargarBloqueos("data/bloqueos.txt");
         ArrayList<Planta> plantas = plantaService.obtenerTodas();
         
         ArrayList<Camion> camiones = camionService.obtenerTodosLosCamiones();
-        
+        for(Camion c : camiones){
+            System.out.println("El camion ingresado es: "+c.getCodigo()+" y su ubi es: "+ c.getUbicacionActual().getPosX()+", "+c.getUbicacionActual().getPosY());
+        }
         System.out.println("La fecha Input que esta ingresando es: "+ fechaInput+" y la de ahora es: "+ ahora);
         ArrayList<Pedido> pedidos = pedidoService.obtenerPedidosAnteriores(fechaInput.minusMinutes(tiermpoSalto), ahora);
         for(Pedido p : pedidos){
@@ -105,10 +139,22 @@ public class RoutingService {
         Solucion mejor = sa.optimize(fechaSimulada);
         //pedidosNoEntregados = new ArrayList<>();
         //pedidosNoEntregados = actualizarDatos(mejor, fechaSimulada.plusMinutes(tiermpoSalto), camiones, plantas);
-        
-        new Thread(() -> {
-            actualizarDatosBD(mejor,fechaSimulada, fechaSimulada.plusMinutes(tiermpoSalto), camiones, plantas);
-        }).start();
+        for(PlanCamion p : mejor.getPlanesCamion()){
+                System.out.println("----RETORNOOOOOOO LA SOLUCION---------");
+                System.out.println("El camion: "+p.getCamion().getCodigo()+ " y su ubi: "+p.getCamion().getUbicacionActual().getPosX()+", "+p.getCamion().getUbicacionActual().getPosY());
+                for(SubRuta sub: p.getSubRutas()){
+                    System.out.println("El Inicio: "+ sub.getHoraInicio()+", ubi: "+sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY()+" y Fin: "+sub.getHoraFin()+", ubi: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY()+" y el size es: "+ sub.getTrayectoria().size());
+                    System.out.println("--");
+                    for(Nodo n: sub.getTrayectoria()){
+                        System.out.print("("+n.getPosX()+", "+n.getPosY()+"), ");
+                    }
+                    System.out.println("--");
+                }
+            }
+        //new Thread(() -> {
+            
+        //}).start();
+        actualizarDatosBD(mejor,fechaSimulada, fechaSimulada.plusMinutes(tiermpoSalto), camiones, plantas);
         //System.out.println("Se agrego una nueva solucion al arreglo");
         //soluciones.add(mejor);
         //fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
@@ -384,7 +430,8 @@ public class RoutingService {
             }
             }
         }
-      //  System.out.println("COMENZOOOOOOO CON LA BD:");
+        LocalDateTime inicioBD = LocalDateTime.now();
+      System.out.println("COMENZOOOOOOO CON LA BD:");
        actualizado = true;
         for(Planta planta: plantas){
             actualizado = plantaService.actualizarGlpPlanta(planta.getGlpDisponible(), planta.getId());
@@ -427,7 +474,10 @@ public class RoutingService {
                 }
             }
         }
-       // System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
+        LocalDateTime finBD = LocalDateTime.now();
+        Duration duracion = Duration.between(inicioBD, finBD);
+        System.out.println("Tiempo en actualizar BD: " + duracion.toMillis() + " ms");
+       System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
     }
 
 

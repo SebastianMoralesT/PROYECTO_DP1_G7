@@ -49,6 +49,21 @@ public class PlantaService {
         return plantas;
     }
 
+    public boolean actualizarTodasLasPlantas() {
+        String sql = "UPDATE Planta SET glpDisponible=capacidadMaxima";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+
     public boolean actualizarGlpPlanta(double glpActual, int id) {
         String sql = "UPDATE Planta SET glpDisponible = ? WHERE id = ?";
 

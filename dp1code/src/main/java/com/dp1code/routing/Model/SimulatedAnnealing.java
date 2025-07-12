@@ -14,7 +14,7 @@ import org.springframework.cglib.core.Local;
 public class SimulatedAnnealing {
     private static final double EARLY_PENALTY = 10.0;
     public static final double SPEED_KMH = 50.0;
-    public static final int horasPlazo = 1;
+    public static final int horasPlazo = 4;
     private double initialTemp;
     private double coolingRate;
     private int maxIterations;
@@ -78,7 +78,7 @@ public class SimulatedAnnealing {
      * secuencialmente.
      */
     private Solucion initialSolution(LocalDateTime now) {
-        System.out.println("Ingreso aqui A INITIAL SOLUTION");
+        //System.out.println("Ingreso aqui A INITIAL SOLUTION");
         Nodo base = plantas.get(0).getUbicacion(); // planta principal
 
         ArrayList<PlanCamion> plans = new ArrayList<>();
@@ -105,6 +105,10 @@ public class SimulatedAnnealing {
             boolean asignado = false;
             for (PlanCamion plan : plans) {
                 Camion c = plan.getCamion();
+                if(p.getCantidadGlp()>c.getCapacidadMaxima()){
+                    continue;
+                }
+
                 c.setGlpActualSim(c.getGlpActual());
                 c.setGlpTanqueSim(c.getGlpTanque());
                 for(Planta planta : plantas) {
@@ -209,7 +213,7 @@ public class SimulatedAnnealing {
                         continue;
                     }
                 }
-                System.out.println("Llego a astart a detino");
+                //System.out.println("Llego a astart a detino");
                 plan.addSubRuta(new SubRuta(start, p.getDestino(), p, trayectoria, horaSalida, horaLlegadaAP));
                 c.setGlpActual(c.getGlpActualSim());
                 c.setGlpTanque(c.getGlpTanqueSim());
@@ -293,9 +297,9 @@ public class SimulatedAnnealing {
                 }
             }
         }
-        for(PlanCamion p: plans){
-            System.out.println("Los planes: "+ p.getCamion().getCodigo()+" tiene "+ p.getSubRutas().size()+" subrutas");
-        }
+        //for(PlanCamion p: plans){
+          //  System.out.println("Los planes: "+ p.getCamion().getCodigo()+" tiene "+ p.getSubRutas().size()+" subrutas");
+        //}
         Solucion sol = new Solucion(plans, 0);
         sol.setCosto(cost(sol));
         return sol;
@@ -303,6 +307,8 @@ public class SimulatedAnnealing {
 
 private boolean intentarAsignarPedido(PlanCamion plan, Pedido p, LocalDateTime now) {
     Camion c = plan.getCamion();
+    if(c.getCapacidadMaxima()<p.getCantidadGlp()) return false;
+
     c.setGlpActualSim(c.getGlpActual());
     c.setGlpTanqueSim(c.getGlpTanque());
 
@@ -440,6 +446,7 @@ private List<Pedido> dividirPedidoGrande(Pedido p) {
 
 private boolean intentarAsignarFlexible(PlanCamion plan, Pedido p, LocalDateTime now) {
     Camion c = plan.getCamion();
+    if(c.getCapacidadMaxima()<p.getCantidadGlp()) return false;
     c.setGlpActualSim(c.getGlpActual());
     c.setGlpTanqueSim(c.getGlpTanque());
     LocalDateTime t = now;

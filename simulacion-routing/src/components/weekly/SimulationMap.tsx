@@ -59,7 +59,7 @@ const [highlightPulse, setHighlightPulse] = useState(0);
   
   const trucksProgressRef = useRef(
     routes.map(() => ({
-      currentStep: -1,
+      currentStep: 0,
       progress: 0,
       currentPos: [0, 0] as [number, number],
       targetPos: [0, 0] as [number, number]
@@ -170,10 +170,10 @@ const fetchLoop = async () => {
       const [solucion] = await Promise.all([
         obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr)
       ]);
-
+      console.log("La solucion obtenida con la nueva fecha:"+ isoStr + " es: "+ solucion.planesCamion.map(plan => plan.subRutas.map(subR => subR.trayectoria.map(tray => tray.posX + " " + tray.posY))));
       setlistSolucion(prev => [...prev, solucion]);
-      fechaActual = new Date(fechaActual.getTime() + 4 * 60 * 1000);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      fechaActual = new Date(fechaActual.getTime() + 5 * 60 * 1000);
+      await new Promise(resolve => setTimeout(resolve, 0));
     } catch (error) {
       console.error("Error al obtener solución:", error);
       break;
@@ -189,30 +189,23 @@ useEffect(() => {
   }
 }, [simulationTrigger]);
 
-const indiceRef = useRef(0);
-const nextUpdateMsRef = useRef(0);
+const indiceRef = useRef(1);
 
 
 useEffect(() => {
   if (listSolucion.length === 0) return;
-
+  console.log("INGRESOOOOOO AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIII");
   const intervalo = setInterval(() => {
     if (!fechaInicioRef.current) return;
 
     const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
 
-    // Si es la primera vez, inicializa el valor de nextUpdateMs
-    if (nextUpdateMsRef.current === 0) {
-      nextUpdateMsRef.current = 0; // Primer umbral a los 4 minutos
-    }
-
     // Si ya pasamos el siguiente umbral de actualización
-    if (transcurridoMs >= nextUpdateMsRef.current) {
+    if (transcurridoMs % 300000==0) {
       const sol = listSolucion[indiceRef.current];
       if (!sol) return;
 
       indiceRef.current += 1;
-      nextUpdateMsRef.current += 240000; // Configura el próximo umbral
 
       console.log("Actualizando con índice:", indiceRef.current - 1);
       console.log("TranscurridosMs:", transcurridoMs);
@@ -242,7 +235,7 @@ useEffect(() => {
       setActiveOrders(activeOrders);
       setActiveTrucks(activeTrucks);
     }
-  }, 1000);
+  }, 400);
 
   return () => clearInterval(intervalo);
 }, [listSolucion]);
@@ -306,8 +299,11 @@ useEffect(() => {
     };
   });
 
+}, [trucks, routes]);
+useEffect(() => {
+
   drawInitialState();
-}, [imagesLoaded, loading, trucks, routes]);
+}, [imagesLoaded, loading]);
 
 
 
@@ -575,9 +571,7 @@ useEffect(() => {
   let animationId: number;
   const animate = () => {
     setHighlightPulse(prev => (prev + 0.02) % (Math.PI * 2));
-   // console.log("Esta ingresando a animate")
     animationId = requestAnimationFrame(animate);
-   // console.log("Salio del animate")
   };
 
   animationId = requestAnimationFrame(animate);
@@ -585,7 +579,7 @@ useEffect(() => {
 }, [selectedOrder]);
 
 
-  const animate = useCallback((timestamp: number) => {
+const animate = useCallback((timestamp: number) => {
   
   if (!canvasRef.current || !Object.values(imagesLoaded).every(Boolean)) return;
   

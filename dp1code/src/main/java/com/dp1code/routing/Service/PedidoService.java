@@ -26,6 +26,22 @@ public class PedidoService {
 
     @Autowired
     private DatabaseService databaseService;
+
+    public boolean actualizarTodosPedidosANoEntregados() {
+        String sql = "UPDATE prueba_camiones.Pedido SET entregado=0 WHERE entregado=1";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+
     public void actualizarPedidosJson(List<Pedido> pedidos) {
         String sql = "CALL prueba_camiones.actualizar_pedidos_json(?)";
 

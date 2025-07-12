@@ -25,7 +25,7 @@ public class CamionService {
     }
 
     public boolean actualizarUbicacionCamion(int posX, int posY, String codigoCamion) {
-        String sql = "UPDATE prueba_camiones.Nodo AS N INNER JOIN prueba_camiones.Camion AS C ON C.ubicacionActual_id = N.id SET N.posX = ?, N.posY = ? WHERE C.codigo = ?";
+        String sql = "UPDATE prueba_camiones.Camion SET ubicacionActual_id = (SELECT id FROM prueba_camiones.Nodo WHERE posX= ? AND posY=?) WHERE codigo=?";
 
         try (Connection conn = DatabaseService.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -42,6 +42,49 @@ public class CamionService {
             throw new RuntimeException("Error al actualizar la ubicación del camión", e);
         }
     }
+    public boolean actualizarUbicacionTodosCamion() {
+        String sql = "UPDATE prueba_camiones.Camion SET ubicacionActual_id = 581";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public boolean actualizarGlpTanqueTodosCamion() {
+        String sql = "UPDATE prueba_camiones.Camion SET glpTanque = 25";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public boolean actualizarGlpCargaTodosCamion() {
+        String sql = "UPDATE prueba_camiones.Camion SET glpActual = capacidadMaxima";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+
     public boolean actualizarGlpTanqueCamion(double glpTanque, String codigoCamion) {
         String sql = "UPDATE Camion SET glpTanque = ? WHERE codigo = ?";
 
