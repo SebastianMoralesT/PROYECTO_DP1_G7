@@ -19,7 +19,7 @@ export default function SimulationMap() {
   const simTimeRef = useRef(simTime); // Falta averiguar sobre esto
   const [hoveredPlant, setHoveredPlant] = useState<Planta | null>(null); // Cuando el mouse esta encima, aqui se guarda la planta en cuestión.
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 }); // Estas son las coordenadas donde mostrar el tooltip en pantalla.
-  const [imagesLoaded, setImagesLoaded] = useState({ truck: false, plantPrincipal: false, plantSecundaria: false, order: false}); // Indica si cada imagen ya cargó.
+  const [imagesLoaded, setImagesLoaded] = useState({ truck: false, plantPrincipal: false, plantSecundaria: false, order: false }); // Indica si cada imagen ya cargó.
   const animationFrameRef = useRef<number>(0); // Guarda el ID de requestAnimationFrame para poder detenerlo si es necesario
   const lastTimeRef = useRef<number>(0); // Guarda el tiempo de la última iteración de animación
   //Datos de la simulación 
@@ -31,7 +31,7 @@ export default function SimulationMap() {
   const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
   const [routes, setRoutes] = useState<SubRuta[][]>([]);
 
-  const { setActiveOrders, setActiveTrucks, selectedOrder  } = useTransport();
+  const { setActiveOrders, setActiveTrucks, selectedOrder } = useTransport();
 
   //Estado de carga.
   const [loading, setLoading] = useState(false); // Mientras es true, se muestra un mensaje de carga.
@@ -45,18 +45,18 @@ export default function SimulationMap() {
   const fechaInicioRef = useRef<Date | null>(null);
   const routesRef = useRef<SubRuta[][]>([]);
   const trucksRef = useRef<Camion[]>([]);
-const ordersRef = useRef<Pedido[]>([]);
-const selectedOrderRef = useRef<Pedido | null>(null);
-const lastSimTimeRef = useRef<Date | null>(null);
-const [simulationTrigger, setSimulationTrigger] = useState(0);
+  const ordersRef = useRef<Pedido[]>([]);
+  const selectedOrderRef = useRef<Pedido | null>(null);
+  const lastSimTimeRef = useRef<Date | null>(null);
+  const [simulationTrigger, setSimulationTrigger] = useState(0);
 
 
-const [textoPedidos, setTextoPedidos] = useState<string>("");
-const [textoSubRutas, setTextoSubRutas] = useState<string>("");
+  const [textoPedidos, setTextoPedidos] = useState<string>("");
+  const [textoSubRutas, setTextoSubRutas] = useState<string>("");
 
-const [highlightPulse, setHighlightPulse] = useState(0);
-
+  const [highlightPulse, setHighlightPulse] = useState(0);
   
+
   const trucksProgressRef = useRef(
     routes.map(() => ({
       currentStep: 0,
@@ -66,29 +66,29 @@ const [highlightPulse, setHighlightPulse] = useState(0);
     }))
   );
 
-  
 
-useEffect(() => {
-  selectedOrderRef.current = selectedOrder;
-}, [selectedOrder]);
 
   useEffect(() => {
-  routesRef.current = routes;
-}, [routes]);
+    selectedOrderRef.current = selectedOrder;
+  }, [selectedOrder]);
 
-useEffect(() => {
-  ordersRef.current = orders;
-}, [orders]);
+  useEffect(() => {
+    routesRef.current = routes;
+  }, [routes]);
 
-useEffect(() => {
-  trucksRef.current = trucks;
-}, [trucks]);
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
+
+  useEffect(() => {
+    trucksRef.current = trucks;
+  }, [trucks]);
 
 
 
   // Cargar datos del backend
   useEffect(() => {
-    
+
     const fetchData = async () => {
       console.log("Ingresoo aqui")
       try {
@@ -96,7 +96,8 @@ useEffect(() => {
           obtenerPlantas(),
           obtenerBloqueos()
         ]);
-        
+        console.log("PLANTAS:" + plantas);
+        console.log("BLOQUEOS:" + bloqueosObtenidos);
         setPlants(plantas);
         setBloqueos(bloqueosObtenidos);
         setLoading(false);
@@ -111,36 +112,46 @@ useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    console.log("PLANTAS:" + plants);
+  }, [plants])
 
-useEffect(() => {
+  useEffect(() => {
+    console.log("BLOQUEOS:" + bloqueos);
+  }, [bloqueos])
+
+  /*
+  useEffect(() => {
     const fetchData2 = async () => {
-      if(fechaInicioRef.current===null) return;
-      console.log("Esta ingresando con la fecha de inicio: "+fechaInicio);
+      if (fechaInicioRef.current === null) return;
+      console.log("Esta ingresando con la fecha de inicio: " + fechaInicio);
       try {
         const solucionesObtenidas: Solucion[] = [];
         const [solucion] = await Promise.all([
           obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), fechaInicioRef.current.toISOString().replace("Z", ""))
         ]);
 
-        console.log("La solucion obtenida es: "+ solucion.planesCamion);
+        console.log("La solucion obtenida es: " + solucion.planesCamion);
 
         solucionesObtenidas.push(solucion);
-        console.log("Las soluciones obtenidas son: "+solucionesObtenidas.map(sol => sol.planesCamion));
+        console.log("Las soluciones obtenidas son: " + solucionesObtenidas.map(sol => sol.planesCamion));
 
         // Procesar camiones y rutas
         const camiones = solucionesObtenidas.map(r => r.planesCamion[0].camion);
         const subRutas = solucionesObtenidas.map(r => r.planesCamion[0].subRutas);
-        const pedidos = solucionesObtenidas[0].planesCamion.flatMap(plan => 
-            plan.subRutas
-              .filter(subRuta => subRuta.pedido)
-              .map(subRuta => subRuta.pedido)
-          ).filter(pedido => pedido) as Pedido[];
-        console.log("Los pedidos son: "+pedidos.map(p => p.id));
-        
+        const pedidos = solucionesObtenidas[0].planesCamion.flatMap(plan =>
+          plan.subRutas
+            .filter(subRuta => subRuta.pedido)
+            .map(subRuta => subRuta.pedido)
+        ).filter(pedido => pedido) as Pedido[];
+        console.log("Los pedidos son: " + pedidos.map(p => p.id));
+
         setlistSolucion(solucionesObtenidas);
         setTrucks(camiones);
         setRoutes(subRutas);
         setOrders(pedidos);
+        setActiveOrders(pedidos);
+        setActiveTrucks(camiones);
         setPositionsInitialized(false);
 
         startSimulation();
@@ -154,94 +165,108 @@ useEffect(() => {
     };
 
     fetchData2();
+  }, [simulationTrigger]); */
+
+  const fetchLoop = async () => {
+
+    if (fechaInicioRef.current === null) return;
+    let cancelado = false;
+    let fechaActual = new Date(fechaInicioRef.current.getTime()); // Avanza 6m40s
+    while (!cancelado) {
+      try {
+        const isoStr = fechaActual.toISOString().replace("Z", "");
+        console.log("La nueva fecha es:", isoStr);
+        const start = Date.now();
+        
+        const [solucion] = await Promise.all([
+          obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr)
+        ]);
+        console.log("La solucion obtenida con la nueva fecha:" + isoStr + " es: " + solucion.planesCamion.map(plan => plan.subRutas.map(subR => subR.trayectoria.map(tray => tray.posX + " " + tray.posY))));
+        setlistSolucion(prev => [...prev, solucion]);
+        
+        fechaActual = new Date(fechaActual.getTime() + 6 * 60 * 1000 + 40 * 1000); // 6 min 40 s simulados
+        //await new Promise(resolve => setTimeout(resolve, 0));
+        const elapsed = Date.now() - start;
+        await new Promise((resolve) =>
+          setTimeout(resolve, 0)  // Espera 90 segundos
+        );
+      } catch (error) {
+        console.error("Error al obtener solución:", error);
+        break;
+      }
+    }
+
+    return () => { cancelado = true; };
+  };
+
+  useEffect(() => {
+    if (fechaInicioRef.current !== null) {
+      fetchLoop();
+    }
   }, [simulationTrigger]);
 
-const fetchLoop = async () => {
-
-  if(fechaInicioRef.current===null) return;
-  let cancelado = false;
-  let fechaActual = new Date(fechaInicioRef.current);
-
-  while (!cancelado) {
-    try {
-      const isoStr = fechaActual.toISOString().replace("Z", "");
-      console.log("La nueva fecha es:", isoStr);
-
-      const [solucion] = await Promise.all([
-        obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr)
-      ]);
-      console.log("La solucion obtenida con la nueva fecha:"+ isoStr + " es: "+ solucion.planesCamion.map(plan => plan.subRutas.map(subR => subR.trayectoria.map(tray => tray.posX + " " + tray.posY))));
-      setlistSolucion(prev => [...prev, solucion]);
-      fechaActual = new Date(fechaActual.getTime() + 5 * 60 * 1000);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    } catch (error) {
-      console.error("Error al obtener solución:", error);
-      break;
-    }
-  }
-
-  return () => { cancelado = true; };
-};
-
-useEffect(() => {
-  if (fechaInicioRef.current !== null) {
-    fetchLoop();
-  }
-}, [simulationTrigger]);
-
-const indiceRef = useRef(1);
+  const indiceRef = useRef(0);
 
 
-useEffect(() => {
-  if (listSolucion.length === 0) return;
-  console.log("INGRESOOOOOO AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIII");
-  const intervalo = setInterval(() => {
-    if (!fechaInicioRef.current) return;
+  useEffect(() => {
+    if (listSolucion.length === 0) return;
+    console.log("INGRESOOOOOO AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIII");
+    const intervalo = setInterval(() => {
+      if (!fechaInicioRef.current) return;
+      let contador = 0;
+      const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
+      // Si ya pasamos el siguiente umbral de actualización
+      if (transcurridoMs % (6 * 60 * 1000 + 40 * 1000) == 0) {//************************************** */
+        console.log("Los transcurridosMs son: "+ transcurridoMs+ " y la fecha actual es: "+ simTimeRef.current+" y la fecha inicio es: "+ fechaInicioRef.current+" y la fecha real es: "+ Date.now());
+        console.log("Y el indice es: "+ indiceRef.current);
+        const sol = listSolucion[indiceRef.current];
+        if (!sol) return;
+        console.log("La solucion obtenida es: " + sol.costo+ " y los pedidos son: "+ sol.planesCamion.flatMap(plan => plan.subRutas.map(subR => subR.pedido?.id)));
+        
 
-    const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
+        indiceRef.current += 1;
 
-    // Si ya pasamos el siguiente umbral de actualización
-    if (transcurridoMs % 300000==0) {
-      const sol = listSolucion[indiceRef.current];
-      if (!sol) return;
+        console.log("Actualizando con índice:", indiceRef.current - 1);
+        console.log("TranscurridosMs:", transcurridoMs);
+        console.log("Longitud de listSolucion:", listSolucion.length);
 
-      indiceRef.current += 1;
+        const activeTrucks = sol.planesCamion.map(plan => plan.camion);
+        const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
+        const activeOrders = sol.planesCamion.flatMap(plan =>
+          plan.subRutas
+            .filter(subRuta => subRuta.pedido)
+            .map(subRuta => subRuta.pedido)
+        ).filter(pedido => pedido) as Pedido[];
 
-      console.log("Actualizando con índice:", indiceRef.current - 1);
-      console.log("TranscurridosMs:", transcurridoMs);
-      console.log("Longitud de listSolucion:", listSolucion.length);
+        setTextoPedidos(
+          activeOrders.map(p => `Pedido ${p.id} en (${p.destino.posX}, ${p.destino.posY}) HoraP:${p.horaPedido} y entregado: ${p.entregado}`).join("\n")
+        );
 
-      const activeTrucks = sol.planesCamion.map(plan => plan.camion);
-      const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
-      const activeOrders = sol.planesCamion.flatMap(plan =>
-        plan.subRutas
-          .filter(subRuta => subRuta.pedido)
-          .map(subRuta => subRuta.pedido)
-      ).filter(pedido => pedido) as Pedido[];
+        setTextoSubRutas(
+          activeRoutes.map(subRuta =>
+            subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
+          ).join("\n\n")
+        );
 
-      setTextoPedidos(
-        activeOrders.map(p => `Pedido ${p.id} en (${p.destino.posX}, ${p.destino.posY}) HoraP:${p.horaPedido} y entregado: ${p.entregado}`).join("\n")
-      );
+        setTrucks(activeTrucks);
+        setRoutes(activeRoutes);
+        setOrders(activeOrders);
+        setActiveOrders(activeOrders);
+        setActiveTrucks(activeTrucks);
 
-      setTextoSubRutas(
-        activeRoutes.map(subRuta =>
-          subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
-        ).join("\n\n")
-      );
+        contador++;
+        if(contador==1){
+          startSimulation();
+          startAnimation();
+        }
+      }
+    }, 30);//************************************** */
 
-      setTrucks(activeTrucks);
-      setRoutes(activeRoutes);
-      setOrders(activeOrders);
-      setActiveOrders(activeOrders);
-      setActiveTrucks(activeTrucks);
-    }
-  }, 400);
-
-  return () => clearInterval(intervalo);
-}, [listSolucion]);
+    return () => clearInterval(intervalo);
+  }, [listSolucion]);
 
 
-  
+
   useEffect(() => {
     simTimeRef.current = simTime;
   }, [simTime]);
@@ -283,27 +308,27 @@ useEffect(() => {
     loadImages();
   }, []);
 
-useEffect(() => {
-  if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
+  useEffect(() => {
+    if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
 
-  trucksProgressRef.current = routes.map((subRutas, index) => {
-    const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
-    const firstRoute = subRutas[0]?.trayectoria || [];
-    return {
-      currentStep: 0,
-      progress: 0,
-      currentPos: [initialPos.posX, initialPos.posY],
-      targetPos: firstRoute.length > 0
-        ? [firstRoute[0].posX, firstRoute[0].posY]
-        : [initialPos.posX, initialPos.posY]
-    };
-  });
+    trucksProgressRef.current = routes.map((subRutas, index) => {
+      const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
+      const firstRoute = subRutas[0]?.trayectoria || [];
+      return {
+        currentStep: 0,
+        progress: 0,
+        currentPos: [initialPos.posX, initialPos.posY],
+        targetPos: firstRoute.length > 0
+          ? [firstRoute[0].posX, firstRoute[0].posY]
+          : [initialPos.posX, initialPos.posY]
+      };
+    });
 
-}, [trucks, routes]);
-useEffect(() => {
+  }, [trucks, routes]);
+  useEffect(() => {
 
-  drawInitialState();
-}, [imagesLoaded, loading]);
+    drawInitialState();
+  }, [imagesLoaded, loading]);
 
 
 
@@ -326,6 +351,7 @@ useEffect(() => {
         return false;
       }
     });
+    //console.log("Dibujando bloqueos activos:", bloqueosActivos);
 
     bloqueosActivos.forEach(bloqueo => {
       const nodos = bloqueo.nodos;
@@ -557,216 +583,216 @@ useEffect(() => {
     ctx.restore();
   }, []);
 
-// Añade este efecto para la animación pulsante
-useEffect(() => {
-  //console.log("selectedOrder CAMBIÓ:", selectedOrder);
-  if (!selectedOrder) {
-    setHighlightPulse(0); // Resetear animación
-    return;
-  }
- 
-
-  if (highlightPulse !== 0) return;
-
-  let animationId: number;
-  const animate = () => {
-    setHighlightPulse(prev => (prev + 0.02) % (Math.PI * 2));
-    animationId = requestAnimationFrame(animate);
-  };
-
-  animationId = requestAnimationFrame(animate);
-  return () => cancelAnimationFrame(animationId);
-}, [selectedOrder]);
-
-
-const animate = useCallback((timestamp: number) => {
-  
-  if (!canvasRef.current || !Object.values(imagesLoaded).every(Boolean)) return;
-  
-  const ctx = canvasRef.current.getContext("2d");
-  
-  if (!ctx) return;
-  const cols = 70;
-  const rows = 50;
-  const spacing = 13;
-
-  if (!lastTimeRef.current) {
-    lastTimeRef.current = timestamp;
-  }
-
-  const deltaTime = timestamp - lastTimeRef.current;
-  lastTimeRef.current = timestamp;
-
-  drawGrid(ctx, cols, rows, spacing);
-  drawBloqueos(ctx, spacing, simTimeRef.current);
-  if (hoveredPlant && ctx) {
-    drawPlantTooltip(ctx, hoveredPlant, tooltipPosition.x, tooltipPosition.y);
-  }
-
-  plants.forEach(plant => {
-    drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
-  });
-
-  ordersRef.current.forEach(order => {
-    let horaFin: number | null = null;
-
-    const horaInicio = new Date(order.horaPedido).getTime();
-    routesRef.current.forEach(subRutas => {
-      subRutas.forEach(subRuta => {
-        if (subRuta.pedido && subRuta.pedido.id === order.id) {
-          //console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+subRuta.horaFin);
-          horaFin = new Date(subRuta.horaFin).getTime();
-        }
-      });
-    });
-
-    
-    //console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+horaFin);
-    if (horaFin !== null &&
-      simTimeRef.current.getTime() >= horaInicio &&
-      simTimeRef.current.getTime() <= horaFin) {
-
-      drawOrder(ctx, order.destino.posX, order.destino.posY, order, spacing);
-    }
-  });
-
-  
-
-  // Dibujar rutas activas como en tu versión original  
-  routesRef.current.forEach((subRutas, index) => {
-    const color = `hsl(${(index * 30) % 360}, 70%, 50%)`;
-    
-    const activeSubRutas = subRutas.filter(subRuta => {
-      const horaInicio = new Date(subRuta.horaInicio).getTime();
-      const horaFin = new Date(subRuta.horaFin).getTime();
-      return simTimeRef.current.getTime() >= horaInicio && simTimeRef.current.getTime() <= horaFin;
-    });
-    activeSubRutas.forEach(subRuta => {
-      drawRoute(ctx, subRuta.trayectoria, color, spacing);
-    });
-  });
-
-  // Calcular avance de camiones en función del tiempo simulado
-  const tiempoSimuladoTranscurrido = lastSimTimeRef.current
-    ? (simTimeRef.current.getTime() - lastSimTimeRef.current.getTime()) / 1000
-    : 0;
-
-  lastSimTimeRef.current = new Date(simTimeRef.current);
-
-  
-  routesRef.current.forEach((subRutas, index) => {
-    const progressData = trucksProgressRef.current[index];
-    if (!progressData) return;
-    const truck = trucksRef.current[index];
-    //console.log("El truck es: "+truck+" y el subRutas son: "+subRutas+ " y la subRutas.length es:   "+subRutas.length);
-    if (!truck || !subRutas || subRutas.length === 0) return;
-
-    const rutasVisibles = subRutas.filter(subRuta => {
-      const horaInicio = new Date(subRuta.horaInicio).getTime();
-      return horaInicio <= simTimeRef.current.getTime();
-    });
-    //console.log("Las rutasVisibles son: "+ rutasVisibles.length);
-    const fullRoute = rutasVisibles.flatMap(subRuta => subRuta.trayectoria);
-    if (fullRoute.length < 2) return;
-
-    if (progressData.currentStep === -1) {
-      const firstPos = fullRoute[0];
-      const secondPos = fullRoute[1] || fullRoute[0];
-      progressData.currentStep = 0;
-      progressData.currentPos = [firstPos.posX, firstPos.posY];
-      progressData.targetPos = [secondPos.posX, secondPos.posY];
-      progressData.progress = 0;
-    }
-
-    if (progressData.currentStep >= fullRoute.length - 1) {
-      const lastPos = fullRoute[fullRoute.length - 1] || { posX: 0, posY: 0 };
-      progressData.currentPos = [lastPos.posX, lastPos.posY];
-      drawTruck(ctx, progressData.currentPos[0], progressData.currentPos[1], truck, spacing, progressData.currentPos, progressData.currentPos, true);
+  // Añade este efecto para la animación pulsante
+  useEffect(() => {
+    //console.log("selectedOrder CAMBIÓ:", selectedOrder);
+    if (!selectedOrder) {
+      setHighlightPulse(0); // Resetear animación
       return;
     }
 
-    const currentNode = fullRoute[progressData.currentStep] || { posX: 0, posY: 0 };
-    const nextNode = fullRoute[progressData.currentStep + 1] || { posX: 0, posY: 0 };
 
-    // Suponiendo que 1 unidad = 1 km, ajusta aquí si tu escala es distinta
-    const distanciaKm = Math.sqrt(
-      Math.pow(nextNode.posX - currentNode.posX, 2) +
-      Math.pow(nextNode.posY - currentNode.posY, 2)
-    );
+    if (highlightPulse !== 0) return;
 
-    const velocidadKmH = 50;
-    const tiempoEntreNodosSegundos = (distanciaKm / velocidadKmH) * 3600;
+    let animationId: number;
+    const animate = () => {
+      setHighlightPulse(prev => (prev + 0.02) % (Math.PI * 2));
+      animationId = requestAnimationFrame(animate);
+    };
 
-    progressData.progress += tiempoSimuladoTranscurrido;
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, [selectedOrder]);
 
-    if (progressData.progress >= tiempoEntreNodosSegundos) {
-      progressData.progress = 0;
-      progressData.currentStep++;
-      const currentStep = fullRoute[progressData.currentStep] || { posX: 0, posY: 0 };
-      const nextStep = fullRoute[progressData.currentStep + 1] || { posX: 0, posY: 0 };
-      progressData.currentPos = [currentStep.posX, currentStep.posY];
-      progressData.targetPos = [nextStep.posX, nextStep.posY];
+
+  const animate = useCallback((timestamp: number) => {
+
+    if (!canvasRef.current || !Object.values(imagesLoaded).every(Boolean)) return;
+
+    const ctx = canvasRef.current.getContext("2d");
+
+    if (!ctx) return;
+    const cols = 70;
+    const rows = 50;
+    const spacing = 13;
+
+    if (!lastTimeRef.current) {
+      lastTimeRef.current = timestamp;
     }
 
-    const t = Math.min(progressData.progress / tiempoEntreNodosSegundos, 1);
-    const interpolatedX = progressData.currentPos[0] + (progressData.targetPos[0] - progressData.currentPos[0]) * t;
-    const interpolatedY = progressData.currentPos[1] + (progressData.targetPos[1] - progressData.currentPos[1]) * t;
+    const deltaTime = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
 
-   // console.log("Llego aqui")
-    drawTruck(ctx, interpolatedX, interpolatedY, truck, spacing, progressData.targetPos, progressData.currentPos, false);
-  });
- // console.log("Al selectOrder ingreso con: "+ selectedOrder);
-  if (selectedOrderRef.current) {
-  //  console.log("Ingresooooo aquiiii")
-    const pulseSize = 15 + Math.sin(highlightPulse) * 5;
-    const pulseAlpha = 0.4 + Math.sin(highlightPulse * 2) * 0.3;
+    drawGrid(ctx, cols, rows, spacing);
+    drawBloqueos(ctx, spacing, simTimeRef.current);
+    if (hoveredPlant && ctx) {
+      drawPlantTooltip(ctx, hoveredPlant, tooltipPosition.x, tooltipPosition.y);
+    }
 
-    // Círculo de resaltado
-    ctx.save();
-    ctx.fillStyle = `rgba(255, 255, 0, ${pulseAlpha})`;
-    ctx.beginPath();
-    ctx.arc(
-      selectedOrderRef.current.destino.posX * spacing,
-      selectedOrderRef.current.destino.posY * spacing,
-      pulseSize,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-    ctx.restore();
+    plants.forEach(plant => {
+      drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
+    });
 
-    // Borde
-    ctx.save();
-    ctx.strokeStyle = `rgba(255, 165, 0, 0.8)`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(
-      selectedOrderRef.current.destino.posX * spacing,
-      selectedOrderRef.current.destino.posY * spacing,
-      pulseSize + 3,
-      0,
-      Math.PI * 2
-    );
-    ctx.stroke();
-    ctx.restore();
+    ordersRef.current.forEach(order => {
+      let horaFin: number | null = null;
 
-    // Texto
-    ctx.save();
-    ctx.scale(1, -1);
-    ctx.fillStyle = 'black';
-    ctx.font = 'bold 12px Arial';
-    ctx.fillText(
-      `Pedido ${selectedOrderRef.current.id}`,
-      selectedOrderRef.current.destino.posX * spacing - 20,
-      -selectedOrderRef.current.destino.posY * spacing - pulseSize - 5
-    );
-    ctx.restore();
-  }
-  animationFrameRef.current = requestAnimationFrame(animate);
+      const horaInicio = new Date(order.horaPedido).getTime();
+      routesRef.current.forEach(subRutas => {
+        subRutas.forEach(subRuta => {
+          if (subRuta.pedido && subRuta.pedido.id === order.id) {
+            //console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+subRuta.horaFin);
+            horaFin = new Date(subRuta.horaFin).getTime();
+          }
+        });
+      });
 
-}, [drawGrid, drawTruck, drawPlant, drawOrder, drawRoute, plants, orders, trucks, routes, imagesLoaded, simTime, hoveredPlant, tooltipPosition, selectedOrder]);
 
-const drawInitialState = useCallback(() => {
+      //console.log("El pedido "+order.id+" va desde la hora: "+order.horaPedido+" hasta la hora: "+horaFin);
+      if (horaFin !== null &&
+        simTimeRef.current.getTime() >= horaInicio &&
+        simTimeRef.current.getTime() <= horaFin) {
+
+        drawOrder(ctx, order.destino.posX, order.destino.posY, order, spacing);
+      }
+    });
+
+
+
+    // Dibujar rutas activas como en tu versión original  
+    routesRef.current.forEach((subRutas, index) => {
+      const color = `hsl(${(index * 30) % 360}, 70%, 50%)`;
+
+      const activeSubRutas = subRutas.filter(subRuta => {
+        const horaInicio = new Date(subRuta.horaInicio).getTime();
+        const horaFin = new Date(subRuta.horaFin).getTime();
+        return simTimeRef.current.getTime() >= horaInicio && simTimeRef.current.getTime() <= horaFin;
+      });
+      activeSubRutas.forEach(subRuta => {
+        drawRoute(ctx, subRuta.trayectoria, color, spacing);
+      });
+    });
+
+    // Calcular avance de camiones en función del tiempo simulado
+    const tiempoSimuladoTranscurrido = lastSimTimeRef.current
+      ? (simTimeRef.current.getTime() - lastSimTimeRef.current.getTime()) / 1000
+      : 0;
+
+    lastSimTimeRef.current = new Date(simTimeRef.current);
+
+
+    routesRef.current.forEach((subRutas, index) => {
+      const progressData = trucksProgressRef.current[index];
+      if (!progressData) return;
+      const truck = trucksRef.current[index];
+      //console.log("El truck es: "+truck+" y el subRutas son: "+subRutas+ " y la subRutas.length es:   "+subRutas.length);
+      if (!truck || !subRutas || subRutas.length === 0) return;
+
+      const rutasVisibles = subRutas.filter(subRuta => {
+        const horaInicio = new Date(subRuta.horaInicio).getTime();
+        return horaInicio <= simTimeRef.current.getTime();
+      });
+      //console.log("Las rutasVisibles son: "+ rutasVisibles.length);
+      const fullRoute = rutasVisibles.flatMap(subRuta => subRuta.trayectoria);
+      if (fullRoute.length < 2) return;
+
+      if (progressData.currentStep === -1) {
+        const firstPos = fullRoute[0];
+        const secondPos = fullRoute[1] || fullRoute[0];
+        progressData.currentStep = 0;
+        progressData.currentPos = [firstPos.posX, firstPos.posY];
+        progressData.targetPos = [secondPos.posX, secondPos.posY];
+        progressData.progress = 0;
+      }
+
+      if (progressData.currentStep >= fullRoute.length - 1) {
+        const lastPos = fullRoute[fullRoute.length - 1] || { posX: 0, posY: 0 };
+        progressData.currentPos = [lastPos.posX, lastPos.posY];
+        drawTruck(ctx, progressData.currentPos[0], progressData.currentPos[1], truck, spacing, progressData.currentPos, progressData.currentPos, true);
+        return;
+      }
+
+      const currentNode = fullRoute[progressData.currentStep] || { posX: 0, posY: 0 };
+      const nextNode = fullRoute[progressData.currentStep + 1] || { posX: 0, posY: 0 };
+
+      // Suponiendo que 1 unidad = 1 km, ajusta aquí si tu escala es distinta
+      const distanciaKm = Math.sqrt(
+        Math.pow(nextNode.posX - currentNode.posX, 2) +
+        Math.pow(nextNode.posY - currentNode.posY, 2)
+      );
+
+      const velocidadKmH = 50;
+      const tiempoEntreNodosSegundos = (distanciaKm / velocidadKmH) * 3600;
+
+      progressData.progress += tiempoSimuladoTranscurrido;
+
+      if (progressData.progress >= tiempoEntreNodosSegundos) {
+        progressData.progress = 0;
+        progressData.currentStep++;
+        const currentStep = fullRoute[progressData.currentStep] || { posX: 0, posY: 0 };
+        const nextStep = fullRoute[progressData.currentStep + 1] || { posX: 0, posY: 0 };
+        progressData.currentPos = [currentStep.posX, currentStep.posY];
+        progressData.targetPos = [nextStep.posX, nextStep.posY];
+      }
+
+      const t = Math.min(progressData.progress / tiempoEntreNodosSegundos, 1);
+      const interpolatedX = progressData.currentPos[0] + (progressData.targetPos[0] - progressData.currentPos[0]) * t;
+      const interpolatedY = progressData.currentPos[1] + (progressData.targetPos[1] - progressData.currentPos[1]) * t;
+
+      // console.log("Llego aqui")
+      drawTruck(ctx, interpolatedX, interpolatedY, truck, spacing, progressData.targetPos, progressData.currentPos, false);
+    });
+    // console.log("Al selectOrder ingreso con: "+ selectedOrder);
+    if (selectedOrderRef.current) {
+      //  console.log("Ingresooooo aquiiii")
+      const pulseSize = 15 + Math.sin(highlightPulse) * 5;
+      const pulseAlpha = 0.4 + Math.sin(highlightPulse * 2) * 0.3;
+
+      // Círculo de resaltado
+      ctx.save();
+      ctx.fillStyle = `rgba(255, 255, 0, ${pulseAlpha})`;
+      ctx.beginPath();
+      ctx.arc(
+        selectedOrderRef.current.destino.posX * spacing,
+        selectedOrderRef.current.destino.posY * spacing,
+        pulseSize,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+      ctx.restore();
+
+      // Borde
+      ctx.save();
+      ctx.strokeStyle = `rgba(255, 165, 0, 0.8)`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(
+        selectedOrderRef.current.destino.posX * spacing,
+        selectedOrderRef.current.destino.posY * spacing,
+        pulseSize + 3,
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
+      ctx.restore();
+
+      // Texto
+      ctx.save();
+      ctx.scale(1, -1);
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 12px Arial';
+      ctx.fillText(
+        `Pedido ${selectedOrderRef.current.id}`,
+        selectedOrderRef.current.destino.posX * spacing - 20,
+        -selectedOrderRef.current.destino.posY * spacing - pulseSize - 5
+      );
+      ctx.restore();
+    }
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+  }, [drawGrid, drawTruck, drawPlant, drawOrder, drawRoute, plants, orders, trucks, routes, imagesLoaded, simTime, hoveredPlant, tooltipPosition, selectedOrder]);
+
+  const drawInitialState = useCallback(() => {
     if (!canvasRef.current || !Object.values(imagesLoaded).every(Boolean)) return;
 
     const ctx = canvasRef.current.getContext("2d");
@@ -790,7 +816,7 @@ const drawInitialState = useCallback(() => {
       drawPlant(ctx, plant.ubicacion.posX, plant.ubicacion.posY, plant, spacing);
     });
   }, [imagesLoaded, plants, drawGrid, drawPlant]);
-  
+
 
   const startAnimation = useCallback(() => {
     cancelAnimationFrame(animationFrameRef.current);
@@ -826,17 +852,17 @@ const drawInitialState = useCallback(() => {
   };
 
   const handleFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  // 1. Captura el valor del input sin modificaciones
-  const fechaInput = e.target.value;
-  setFechaInicio(fechaInput);
-  
-  // 2. Crea la fecha en la zona horaria local del navegador
-  const fechaLocal = new Date(fechaInput);
-  
-  // 3. Envía la fecha local directamente al TimeContext
-  fechaInicioRef.current = fechaLocal;
-  setStartTime(fechaLocal);
-};
+    // 1. Captura el valor del input sin modificaciones
+    const fechaInput = e.target.value;
+    setFechaInicio(fechaInput);
+
+    // 2. Crea la fecha en la zona horaria local del navegador
+    const fechaLocal = new Date(fechaInput);
+
+    // 3. Envía la fecha local directamente al TimeContext
+    fechaInicioRef.current = fechaLocal;
+    setStartTime(fechaLocal);
+  };
 
 
 
@@ -860,7 +886,7 @@ const drawInitialState = useCallback(() => {
     );
   }
   return (
-    
+
     <div className="min-h-screen bg-gray-200 relative overflow-auto">
       <div className="absolute top-4 left-16 z-10 flex gap-2">
         <div className="flex items-end gap-2">
@@ -896,7 +922,7 @@ const drawInitialState = useCallback(() => {
           </button>
         </div>
       </div>
-      
+
       <div className="absolute inset-0 flex items-center justify-center overflow-auto">
         <div className="absolute bottom-30 left-4 z-20 bg-white p-2 rounded shadow-md max-h-120 overflow-auto w-104 text-xs">
           <strong className="block mb-1">Pedidos Activos:</strong>
@@ -912,7 +938,7 @@ const drawInitialState = useCallback(() => {
           onMouseOut={() => setHoveredPlant(null)}
         />
       </div>
-      
+
 
     </div>
   );

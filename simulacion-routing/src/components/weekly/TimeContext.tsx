@@ -46,7 +46,7 @@ export const TimeProvider = ({ children }: { children: ReactNode }) => {
     setIsRunning(true);
     intervalRef.current = setInterval(() => {
       setSimTime((prev) => new Date(prev.getTime() + 1000)); // Avanza 1s en UTC
-    }, 400);
+    }, 30);
   };
 
   const getLocalTime = (date: Date) => {

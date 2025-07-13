@@ -202,6 +202,9 @@ public class SimulatedAnnealing {
                     }
 
                     plan.addSubRuta(new SubRuta(start, mejor.getUbicacion(), null, rutaPlanta, salidaPlanta, llegadaPlanta));
+                    if(mejor.getUbicacion()==grid.getNodoAt(12, 8)){
+                        c.setGlpActualSim(c.getCapacidadMaxima());
+                    }
                     start=mejor.getUbicacion();
                     
                     mejor.setGlpDisponible(mejor.getGlpDisponibleSim());
@@ -373,6 +376,7 @@ private boolean intentarAsignarPedido(PlanCamion plan, Pedido p, LocalDateTime n
         c.setGlpActualSim(nuevaCarga);
         c.setGlpTanqueSim(25);  // lleno nuevamente
         if(mejorPlanta.getUbicacion()==grid.getNodoAt(12, 8)){
+            c.setGlpActualSim(c.getCapacidadMaxima());
             resultado = PathFinder.generarTrayectoria(
                 grid, mejorPlanta.getUbicacion(), p.getDestino(),
                 llegadaPlanta, p.getPlazoMaximoEntrega(), llegadaPlanta, llegadaPlanta.plusMinutes(15), c

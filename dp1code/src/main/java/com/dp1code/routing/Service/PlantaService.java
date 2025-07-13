@@ -49,6 +49,23 @@ public class PlantaService {
         return plantas;
     }
 
+    public boolean actualizarPlantasBatch(List<Planta> plantas, Connection conn) {
+        String sql = "UPDATE prueba_camiones.Planta SET glpDisponible = ? WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (Planta planta : plantas) {
+                ps.setDouble(1, planta.getGlpDisponible());
+                ps.setInt(2, planta.getId());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean actualizarTodasLasPlantas() {
         String sql = "UPDATE Planta SET glpDisponible=capacidadMaxima";
 

@@ -25,7 +25,8 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
+@CrossOrigin(origins = "https://h982equipo7g.duckdns.org")
 @RestController
 @RequestMapping("/api/routing")
 public class RoutingController {

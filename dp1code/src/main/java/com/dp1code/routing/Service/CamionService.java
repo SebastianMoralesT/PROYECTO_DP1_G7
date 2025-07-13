@@ -24,6 +24,30 @@ public class CamionService {
         // Agrega lógica de persistencia si lo deseas
     }
 
+    public boolean actualizarCamionesBatch(List<Camion> camiones, Connection conn) {
+        String sql = "UPDATE prueba_camiones.Camion SET " +
+                    "glpTanque = ?, " +
+                    "glpActual = ?, " +
+                    "ubicacionActual_id = (SELECT id FROM prueba_camiones.Nodo WHERE posX = ? AND posY = ?) " +
+                    "WHERE codigo = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (Camion camion : camiones) {
+                ps.setDouble(1, camion.getGlpTanque());
+                ps.setDouble(2, camion.getGlpActual());
+                ps.setInt(3, camion.getUbicacionActual().getPosX());
+                ps.setInt(4, camion.getUbicacionActual().getPosY());
+                ps.setString(5, camion.getCodigo());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean actualizarUbicacionCamion(int posX, int posY, String codigoCamion) {
         String sql = "UPDATE prueba_camiones.Camion SET ubicacionActual_id = (SELECT id FROM prueba_camiones.Nodo WHERE posX= ? AND posY=?) WHERE codigo=?";
 
