@@ -123,7 +123,7 @@ public class RoutingService {
         
         ArrayList<Camion> camiones = camionService.obtenerTodosLosCamiones();
         for(Camion c : camiones){
-            System.out.println("El camion ingresado es: "+c.getCodigo()+" y su ubi es: "+ c.getUbicacionActual().getPosX()+", "+c.getUbicacionActual().getPosY());
+            System.out.println("El camion ingresado es: "+c.getCodigo()+" y su ubi es: "+ c.getUbicacionActual().getPosX()+", "+c.getUbicacionActual().getPosY()+" y su glpTanque es: "+c.getGlpTanque()+" y su glpCarga es: "+c.getGlpActual());
         }
         System.out.println("La fecha Input que esta ingresando es: "+ fechaInput+" y la de ahora es: "+ ahora);
         ArrayList<Pedido> pedidos = pedidoService.obtenerPedidosAnteriores(fechaInput.minusSeconds(tiermpoSalto), ahora);

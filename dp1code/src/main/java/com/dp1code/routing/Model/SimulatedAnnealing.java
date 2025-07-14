@@ -86,6 +86,8 @@ public class SimulatedAnnealing {
         
         for (Camion c : camiones) {
             plans.add(new PlanCamion(c, new ArrayList<>()));
+            c.setGlpActualSim(c.getGlpActual());
+            c.setGlpTanqueSim(c.getGlpTanque());
         }
         
         List<Pedido> todosPedidos = new ArrayList<>();
@@ -108,9 +110,6 @@ public class SimulatedAnnealing {
                 if(p.getCantidadGlp()>c.getCapacidadMaxima()){
                     continue;
                 }
-
-                c.setGlpActualSim(c.getGlpActual());
-                c.setGlpTanqueSim(c.getGlpTanque());
                 for(Planta planta : plantas) {
                     planta.setGlpDisponibleSim(planta.getGlpDisponible());
                 }
@@ -218,8 +217,6 @@ public class SimulatedAnnealing {
                 }
                 //System.out.println("Llego a astart a detino");
                 plan.addSubRuta(new SubRuta(start, p.getDestino(), p, trayectoria, horaSalida, horaLlegadaAP));
-                c.setGlpActual(c.getGlpActualSim());
-                c.setGlpTanque(c.getGlpTanqueSim());
                 
                 asignado = true;
                 break;
@@ -488,8 +485,8 @@ private boolean intentarAsignarFlexible(PlanCamion plan, Pedido p, LocalDateTime
 
     plan.addSubRuta(new SubRuta(start, p.getDestino(), p, trayectoria, horaSalida, horaLlegadaAP));
 
-    c.setGlpActual(c.getGlpActualSim());
-    c.setGlpTanque(c.getGlpTanqueSim());
+    c.setGlpActualSim(c.getGlpActualSim());
+    c.setGlpTanqueSim(c.getGlpTanqueSim());
 
     System.out.println("Asignación FLEXIBLE: Pedido " + p.getId() + " entregado con carga " + p.getCantidadGlp());
     return true;

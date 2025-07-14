@@ -1,4 +1,4 @@
-/*
+
 // components/common/Legend.tsx
 'use client';
 import { useState } from "react";
@@ -70,4 +70,4 @@ export default function Legend() {
       </div>
     </>
   );
-}*/
+}
