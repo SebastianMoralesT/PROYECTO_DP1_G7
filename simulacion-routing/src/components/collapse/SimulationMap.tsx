@@ -1,3 +1,4 @@
+/*
 // components/SimulationMap.tsx
 "use client";
 
@@ -728,4 +729,4 @@ export default function SimulationMap() {
       </div>
     </div>
   );
-}
+}*/

@@ -1,3 +1,4 @@
+/*
 "use client";
 
 import { Pedido, Camion } from "../../lib/api";
@@ -100,3 +101,4 @@ export default function CollapseSummaryModal({
     </div>
   );
 }
+*/

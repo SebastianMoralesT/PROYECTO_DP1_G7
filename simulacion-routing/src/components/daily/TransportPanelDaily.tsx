@@ -1,3 +1,4 @@
+/*
 // components/daily/TransportPanel.tsx
 "use client";
 import { FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
@@ -122,7 +123,7 @@ export default function TransportPanel() {
 
   return (
     <>
-      {/* Botón para abrir/cerrar */}
+      
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
@@ -132,11 +133,11 @@ export default function TransportPanel() {
         </button>
       )}
 
-      {/* Panel principal */}
+     
       <div className={`fixed right-0 top-12 h-150 bg-white border-l shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
            style={{ width: '550px' }}>
         <div className="h-full flex flex-col">
-          {/* Header */}
+          
           <div className={`${showVehicles ? 'bg-red-500' : 'bg-red-500'} text-white p-2 flex justify-between items-center`}>
             <h3 className="font-semibold">{showVehicles ? 'Lista de Vehículos' : 'Lista de Pedidos'}</h3>
             <button 
@@ -147,7 +148,6 @@ export default function TransportPanel() {
             </button>
           </div>
 
-          {/* Contenido */}
           <div className="p-4 flex-1 overflow-y-auto">
             <div className="flex flex-col items-center mb-4">
               <div className="flex mb-2">
@@ -171,7 +171,6 @@ export default function TransportPanel() {
                 </button>
               </div>
 
-              {/* Filtros según la vista */}
               {showVehicles ? (
                 <div className="flex space-x-3 text-xs">
                   <label className="flex items-center">
@@ -236,7 +235,7 @@ export default function TransportPanel() {
               )}
             </div>
 
-            {/* Barra de búsqueda */}
+  
             <input
               type="text"
               placeholder={showVehicles ? "Buscar por Código" : "Buscar por Cliente"}
@@ -250,7 +249,6 @@ export default function TransportPanel() {
               }}
             />
 
-            {/* Tabla de contenido */}
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
@@ -324,7 +322,6 @@ export default function TransportPanel() {
               </table>
             </div>
 
-            {/* Paginación */}
             <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
               <div>
                 {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} de {totalItems}
@@ -351,4 +348,4 @@ export default function TransportPanel() {
       </div>
     </>
   );
-}
+}*/

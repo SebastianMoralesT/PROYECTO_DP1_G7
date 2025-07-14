@@ -1,4 +1,5 @@
 // components/daily/NewOrderPanel.tsx
+/*
 "use client";
 import { useEffect, useState } from "react";
 import { FiChevronRight, FiChevronLeft, FiX, FiPlus } from "react-icons/fi";
@@ -41,7 +42,7 @@ export default function NewOrderPanel() {
 
   return (
     <>
-      {/* Botón para abrir/cerrar (similar a TransportPanel) */}
+      {}
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
@@ -51,11 +52,11 @@ export default function NewOrderPanel() {
         </button>
       )}
 
-      {/* Panel principal (estilo similar a TransportPanel pero en izquierda) */}
+     
       <div className={`fixed left-16 top-22 h-[calc(62vh-3rem)] bg-white border-r shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
            style={{ width: '300px' }}>
         <div className="h-full flex flex-col">
-          {/* Header */}
+        
           <div className="bg-red-500 text-white p-3 flex justify-between items-center">
             <h3 className="font-semibold">Nuevo Pedido</h3>
             <button 
@@ -66,10 +67,8 @@ export default function NewOrderPanel() {
             </button>
           </div>
 
-          {/* Contenido */}
           <div className="p-3 flex-1 overflow-y-auto">
             <form onSubmit={handleSubmit} className="space-y-1">
-              {/* Código del Cliente */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Código del Cliente
@@ -84,7 +83,6 @@ export default function NewOrderPanel() {
                 />
               </div>
 
-              {/* Posición de Entrega */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,7 +116,6 @@ export default function NewOrderPanel() {
                 </div>
               </div>
 
-              {/* Cantidad de GLP */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Cantidad de GLP (kg)
@@ -133,8 +130,6 @@ export default function NewOrderPanel() {
                   min="1"
                 />
               </div>
-
-              {/* Tiempo Máximo de Entrega */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tiempo Máximo de Entrega
@@ -150,7 +145,6 @@ export default function NewOrderPanel() {
                 />
               </div>
 
-              {/* Botón de envío */}
               <div className="pt-4">
                 <button
                   type="submit"
@@ -166,4 +160,4 @@ export default function NewOrderPanel() {
       </div>
     </>
   );
-}
+}*/

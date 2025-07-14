@@ -1,3 +1,4 @@
+/*
 "use client";
 import React, {
   createContext,
@@ -30,7 +31,7 @@ export const TimeProvider = ({ children }: { children: ReactNode }) => {
       intervalRef.current = setInterval(() => {
         setSimTime((prev) => new Date(prev.getTime() + 1000)); // avanzar 1s
       }, 1000);
-    };*/
+    };
   const startSimulation = () => {
     if (intervalRef.current) return; // prevenir múltiples intervalos
 
@@ -58,7 +59,7 @@ export const TimeProvider = ({ children }: { children: ReactNode }) => {
     startAtMidnight.setHours(0, 0, 0, 0);//¿ES NECESARIO?
     //console.log('fecha a asignar: ', startAtMidnight)
     /*_setStartTime(startAtMidnight);
-    setSimTime(startAtMidnight);*/
+    setSimTime(startAtMidnight);
     _setStartTime(start);
     setSimTime(start);
   };
@@ -83,3 +84,4 @@ export const useSimTime = () => {
   if (!ctx) throw new Error("useSimTime debe usarse dentro de TimeProvider");
   return ctx;
 };
+*/
