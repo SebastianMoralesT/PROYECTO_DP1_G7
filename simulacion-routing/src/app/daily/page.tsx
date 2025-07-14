@@ -1,3 +1,4 @@
+/*
 // app/daily/page.tsx
 import SimulationMapDaily from "@/components/daily/SimulationMapDaily";
 import Sidebar from "@/components/common/Sidebar";
@@ -7,7 +8,7 @@ import TransportPanel from "@/components/daily/TransportPanelDaily";
 import NewOrderPanel from "@/components/daily/NewOrderPanel";      
 
 export default function DailyView() {
-  /*
+  
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
@@ -23,5 +24,5 @@ export default function DailyView() {
         </div>
       </div>
     </div>
-  );*/
-}
+  );
+}*/
