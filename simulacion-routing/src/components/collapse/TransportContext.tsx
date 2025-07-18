@@ -9,11 +9,13 @@ interface TransportContextType {
   selectedOrder: Pedido | null;
   pedidosTotales: number;
   pedidosEntregados: number;
+  trucks: Camion[];
   setActiveOrders: (orders: Pedido[] | ((prev: Pedido[]) => Pedido[])) => void; // Añade soporte para función
   setActiveTrucks: (trucks: Camion[]) => void;
   setSelectedOrder: (order: Pedido | null) => void;
   setPedidosTotales: (pedidos: number) => void;
   setPedidosEntregados: (pedidos: number) => void;
+  setTrucks: (trucks: Camion[]) => void;
 }
 
 const TransportContext = createContext<TransportContextType | undefined>(undefined);
@@ -24,8 +26,9 @@ export function TransportProvider({ children }: { children: ReactNode }) {
   const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
   const [pedidosTotales, setPedidosTotales] = useState<number>(0);
   const [pedidosEntregados, setPedidosEntregados] = useState<number>(0);
+  const [trucks, setTrucks] = useState<Camion[]>([]);
   return (
-    <TransportContext.Provider value={{ activeOrders, activeTrucks, selectedOrder, pedidosTotales, pedidosEntregados, setActiveOrders, setActiveTrucks, setSelectedOrder, setPedidosTotales, setPedidosEntregados}}>
+    <TransportContext.Provider value={{ activeOrders, activeTrucks, selectedOrder, pedidosTotales, pedidosEntregados, trucks, setActiveOrders, setActiveTrucks, setSelectedOrder, setPedidosTotales, setPedidosEntregados, setTrucks}}>
       {children}
     </TransportContext.Provider>
   );

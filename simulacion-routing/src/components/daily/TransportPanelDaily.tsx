@@ -3,8 +3,8 @@ import { FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import type { Pedido, Camion } from '../../lib/api';
 import { obtenerPedidos, obtenerCamiones } from "../../lib/api";
-import { useSimTime } from "@/components/daily/TimeContext";
-import { useTransport } from "@/components/daily/TransportContext";
+import { useSimTime } from "@/components/daily/TimeContextDaily";
+import { useTransport } from "@/components/daily/TransportContextDaily";
 
 export default function TransportPanel() {
   const [isOpen, setIsOpen] = useState(false);

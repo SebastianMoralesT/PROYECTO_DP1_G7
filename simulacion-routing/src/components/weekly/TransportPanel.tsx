@@ -111,7 +111,7 @@ export default function TransportPanel() {
   
   useEffect(() => {
     setPedidosTotales(totalItems);
-    setPedidosEntregados(activeOrders.filter(pedido => pedido.entregado).length);
+    setPedidosEntregados(todosLosPedidos.filter(pedido => pedido.entregado).length);
   }, [totalItems]);
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);

@@ -8,7 +8,7 @@ export default function StatusBar() {
   const [tiempoReal, setTiempoReal] = useState<Date | null>(null);
   const [tiempoSimulacion, setTiempoSimulacion] = useState<Date | null>(null);
   const [vehiculos, setVehiculos] = useState(20);
-  const { activeOrders, activeTrucks, pedidosTotales, pedidosEntregados} = useTransport();
+  const { activeOrders, activeTrucks, pedidosTotales, pedidosEntregados, trucks} = useTransport();
   const [pedidos, setPedidos] = useState({ entregados: 0, total: 3 });
   const { simTime } = useSimTime();
   const [mounted, setMounted] = useState(false);
@@ -70,7 +70,7 @@ const fetchLoop = async () => {
         </div>
       </div>
       <div className="text-center">
-        <span className="font-semibold">Vehículos:</span> {vehiculos}
+        <span className="font-semibold">Vehículos:</span>{ `${trucks.filter((truck) => truck.enRuta).length}/20`}
       </div>
       <div className="text-center">
         <span className="font-semibold">Ped. Entregados:</span>{" "}

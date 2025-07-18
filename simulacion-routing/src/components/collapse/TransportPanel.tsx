@@ -1,4 +1,3 @@
-// components/TransportPanel.tsx
 "use client";
 import { FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 import { useEffect, useState } from "react";
@@ -111,7 +110,7 @@ export default function TransportPanel() {
   
   useEffect(() => {
     setPedidosTotales(totalItems);
-    setPedidosEntregados(activeOrders.filter(pedido => pedido.entregado).length);
+    setPedidosEntregados(todosLosPedidos.filter(pedido => pedido.entregado).length);
   }, [totalItems]);
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);

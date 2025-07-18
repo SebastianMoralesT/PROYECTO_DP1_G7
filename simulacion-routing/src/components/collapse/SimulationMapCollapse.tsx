@@ -1,4 +1,3 @@
-// components/SimulationMap.tsx
 "use client";
 
 import { BsPlayFill, BsStopFill } from "react-icons/bs";
@@ -733,7 +732,6 @@ export default function SimulationMap() {
       if (progressData.currentStep >= fullRoute.length - 1) {
         const lastPos = fullRoute[fullRoute.length - 1] || { posX: 0, posY: 0 };
         progressData.currentPos = [lastPos.posX, lastPos.posY]
-        
 
 
         drawTruck(ctx, progressData.currentPos[0], progressData.currentPos[1], truck, spacing, progressData.currentPos, progressData.currentPos, true);
@@ -758,6 +756,19 @@ export default function SimulationMap() {
         progressData.progress = 0;
         progressData.currentStep++;
         const currentStep = fullRoute[progressData.currentStep] || { posX: 0, posY: 0 };
+        const shouldBeEnRuta = progressData.currentStep < fullRoute.length - 1 && 
+                        new Date(subRutas[0].horaInicio).getTime() <= simTimeRef.current.getTime();
+
+        if (truck.enRuta !== shouldBeEnRuta) {
+          setTrucks(prev => prev.map(t => 
+            t.codigo === truck.codigo ? { 
+              ...t, 
+              enRuta: shouldBeEnRuta,
+              disponibleDesde: shouldBeEnRuta ? "" : simTimeRef.current.toISOString(),
+              ubicacionActual: currentStep
+            } : t
+          ));
+        }
         const nextStep = fullRoute[progressData.currentStep + 1] || { posX: 0, posY: 0 };
         progressData.currentPos = [currentStep.posX, currentStep.posY];
         progressData.targetPos = [nextStep.posX, nextStep.posY];

@@ -1,7 +1,7 @@
 "use client";
 
-import { TimeProvider } from "@/components/daily/TimeContext";
-import { TransportProvider } from "@/components/daily/TransportContext";// <- Importa el provider
+import { TimeProvider } from "@/components/daily/TimeContextDaily";
+import { TransportProvider } from "@/components/daily/TransportContextDaily";
 
 import SimulationMapDaily from "@/components/daily/SimulationMapDaily";
 import Sidebar from "@/components/common/Sidebar";
