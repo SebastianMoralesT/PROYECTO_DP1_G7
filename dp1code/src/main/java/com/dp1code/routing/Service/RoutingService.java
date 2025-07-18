@@ -245,7 +245,7 @@ public class RoutingService {
             
         //}).start();
         System.out.println("LA FECHA DEL PEDIDO PRÖXIMO ES:" + sigTime);
-        actualizarDatosBD(mejor,fechaSimulada, sigTime, camiones, plantas);
+        actualizarDatosBDDiaADia(mejor,fechaSimulada, sigTime, camiones, plantas);
         //System.out.println("Se agrego una nueva solucion al arreglo");
         //soluciones.add(mejor);
         //fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
@@ -563,6 +563,180 @@ public class RoutingService {
     }
 
 
+    private static void actualizarDatosBDDiaADia(Solucion solucion, LocalDateTime fechaSimuladaAnterior,
+            LocalDateTime fechaSimulada, ArrayList<Camion> camiones, ArrayList<Planta> plantas) {
+        CamionService camionService = new CamionService();
+        PedidoService pedidoService = new PedidoService();
+        PlantaService plantaService = new PlantaService();
+        boolean actualizado = true;
+        System.out.println("Se ingresa a actualizar datos a la fecha: " + fechaSimulada);
+        for (PlanCamion plan : solucion.getPlanesCamion()) {
+            if (plan.getSubRutas().size() != 0) {
+                Camion c = new Camion();
+
+                /*
+                 * for(Camion camion: camiones){
+                 * if (camion.getCodigo() == plan.getCamion().getCodigo()) {
+                 * c = camion;
+                 * }
+                 * 
+                 * }
+                 */
+                // Primero verifiquemos si ya termino la ultima subRuta de este plan.
+                SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size() - 1);
+                if (!last.getHoraFin().isAfter(fechaSimulada)) {
+                    c.setUbicacionActual(last.getTrayectoria().get(last.getTrayectoria().size() - 1));
+
+                    for (SubRuta sub : plan.getSubRutas()) {
+                        double glpConsumida = c.calcularConsumo(sub.getTrayectoria().size() - 1);
+                        c.setGlpTanque(c.getGlpTanque() - glpConsumida);
+
+                        if (sub.getPedido() != null) {
+                            double cargaEntregada = sub.getPedido().getCantidadGlp();
+                            c.setGlpActual(c.getGlpActual() - cargaEntregada);
+
+                            sub.getPedido().setEntregado(true);
+                            actualizado = pedidoService
+                                    .actualizarEstadoEntregadoPositivoDiaDia(sub.getPedido().getId());
+                            if (!actualizado) {
+                                System.out.println("Ocurrio un error: Pedido");
+                            }
+                            System.out.println("Se entrego el pedido: " + sub.getPedido().getId() + " con carga de "
+                                    + sub.getPedido().getCantidadGlp());
+                        }
+                        if (Utilidades.esPlantaSecundaria(sub.getTrayectoria().get(sub.getTrayectoria().size() - 1),
+                                plantas)) {
+                            Planta planta = Utilidades.obtenerPlanta(sub.getTrayectoria().get(0), plantas);
+                            double glpFaltante = c.getCapacidadMaxima() - c.getGlpActual();
+                            planta.setGlpDisponible(planta.getGlpDisponible() - glpFaltante);
+                            c.setGlpActual(c.getCapacidadMaxima());
+                            c.setGlpTanque(25);
+                        }
+                        if (Utilidades.esPlantaPrincipal(sub.getTrayectoria().get(sub.getTrayectoria().size() - 1),
+                                plantas)) {
+                            c.setGlpTanque(25);
+
+                            c.setGlpActual(c.getCapacidadMaxima());
+
+                        }
+
+                    }
+
+                    continue;
+                }
+                // Luego verifiquemos si aun no comienza.
+                /*
+                 * if(!plan.getSubRutas().get(0).getHoraInicio().isBefore(fechaSimulada)){
+                 * for(SubRuta sub: plan.getSubRutas()){
+                 * if(sub.getPedido()!=null){
+                 * 
+                 * }
+                 * }
+                 * continue;
+                 * }
+                 */
+                // Luego vemos si es que esta en ruta. Y buscamos en que subRuta esta, para ir
+                // checandolo desde ahí.
+                for (SubRuta sub : plan.getSubRutas()) {
+                    // Si ya paso esa subRuta(A-> B).
+
+                    if (!sub.getHoraFin().isAfter(fechaSimulada) && !sub.getTrayectoria().isEmpty()) {
+                        double glpConsumida = c.calcularConsumo(sub.getTrayectoria().size() - 1);
+                        c.setGlpTanque(c.getGlpTanque() - glpConsumida);
+
+                        if (sub.getPedido() != null) {
+                            double cargaEntregada = sub.getPedido().getCantidadGlp();
+                            c.setGlpActual(c.getGlpActual() - cargaEntregada);
+                            sub.getPedido().setEntregado(true);
+                            actualizado = pedidoService
+                                    .actualizarEstadoEntregadoPositivoDiaDia(sub.getPedido().getId());
+                            if (!actualizado) {
+                                System.out.println("Ocurrio un error: Pedido");
+                            }
+                            System.out.println("Se entrego el pedido: " + sub.getPedido().getId() + " con carga de "
+                                    + sub.getPedido().getCantidadGlp());
+                        }
+                        if (Utilidades.esPlantaSecundaria(sub.getTrayectoria().get(sub.getTrayectoria().size() - 1),
+                                plantas)) {
+                            Planta planta = Utilidades.obtenerPlanta(sub.getTrayectoria().get(0), plantas);
+                            double glpFaltante = c.getCapacidadMaxima() - c.getGlpActual();
+                            c.setGlpTanque(25);
+                            planta.setGlpDisponible(planta.getGlpDisponible() - glpFaltante);
+                            c.setGlpActual(c.getCapacidadMaxima());
+
+                        }
+                        if (Utilidades.esPlantaPrincipal(sub.getTrayectoria().get(sub.getTrayectoria().size() - 1),
+                                plantas)) {
+                            c.setGlpTanque(25);
+
+                            c.setGlpActual(c.getCapacidadMaxima());
+
+                        }
+                    }
+                    /*
+                     * else if (!sub.getHoraInicio().isBefore(fechaSimulada)){//Si aun no llego a
+                     * esa SubRuta
+                     * if(sub.getPedido()!=null){
+                     * 
+                     * }
+                     * }
+                     */
+                    else {// Si esta en plena SubRuta
+                          // if(sub.getPedido()!=null){
+
+                        // }
+                        for (int i = 0; i < sub.getTrayectoria().size() - 1; i++) {
+                            LocalDateTime tiempoParcial = sub.getTiemposNodo().get(i);
+                            LocalDateTime tiempoParcialSiguiente = sub.getTiemposNodo().get(i + 1);
+
+                            if (fechaSimulada.isAfter(tiempoParcial)
+                                    && fechaSimulada.isBefore(tiempoParcialSiguiente)) {
+                                double distancia = i;
+                                c.setUbicacionActual(sub.getTrayectoria().get(i));
+
+                                c.setGlpTanque(c.getGlpTanque() - c.calcularConsumo(distancia));
+
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        if (fechaSimuladaAnterior.toLocalDate().isBefore(fechaSimulada.toLocalDate())) {
+            for (Planta planta : plantas) {
+                if (Utilidades.esPlantaPrincipal(planta.getUbicacion(), plantas)) {
+                    planta.setGlpDisponible(10000);
+                } else {
+                    planta.setGlpDisponible(60);
+                }
+            }
+        }
+
+        LocalDateTime inicioBD = LocalDateTime.now();
+        System.out.println("COMENZOOOOOOO CON LA BD:");
+        actualizado = true;
+        try (Connection conn = DatabaseService.getConnection()) {
+            conn.setAutoCommit(false);
+
+            actualizado = plantaService.actualizarPlantasBatchDiaDia(plantas, conn);
+            if (!actualizado)
+                System.out.println("Error al actualizar plantas");
+
+            actualizado = camionService.actualizarCamionesBatchDiaADia(camiones, conn);
+            if (!actualizado)
+                System.out.println("Error al actualizar camiones");
+
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Optional: rollback
+        }
+        LocalDateTime finBD = LocalDateTime.now();
+        Duration duracion = Duration.between(inicioBD, finBD);
+        System.out.println("Tiempo en actualizar BD: " + duracion.toMillis() + " ms");
+        System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
+    }
     static void cargarBloqueos(String archivo) throws IOException {
         
         BufferedReader br = new BufferedReader(new FileReader(archivo));

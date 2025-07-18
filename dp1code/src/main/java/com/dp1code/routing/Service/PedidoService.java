@@ -92,6 +92,23 @@ public class PedidoService {
 
         return pedidos;
     }
+    public boolean actualizarEstadoEntregadoPositivoDiaDia(String idPedido) {
+        String sql = "UPDATE prueba_camiones_diario.Pedido SET entregado = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseService.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setBoolean(1, true);
+            ps.setString(2, idPedido);
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar estado 'entregado' del pedido con id: " + idPedido, e);
+        }
+    }
     public boolean actualizarTodosPedidosANoEntregadosDiaDia() {
         String sql = "UPDATE prueba_camiones_diario.Pedido SET entregado=0 WHERE entregado=1";
 

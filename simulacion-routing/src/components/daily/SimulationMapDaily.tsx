@@ -178,7 +178,7 @@ export default function SimulationMap() {
   useEffect(() => {
     if (fechaInicioRef.current === null) return;
     let cancelado = false;
-    let fechaActual = new Date(fechaInicioRef.current.getTime()); // Avanza 6m40s
+    
     const ejecutarLoop = async () => {
       try {
         console.log("FECHA PROXIMA: " + fechaProxima.current + " FECHA INIcIO: " + fechaInicioRef.current + "FECHA ACTUAL: " + simTimeRef.current);

@@ -1,4 +1,3 @@
-// contexts/TransportContext.tsx
 "use client";
 
 import { createContext, useContext, ReactNode, useState } from "react";
@@ -8,7 +7,7 @@ interface TransportContextType {
   activeOrders: Pedido[];
   activeTrucks: Camion[];
   selectedOrder: Pedido | null;
-  setActiveOrders: (orders: Pedido[]) => void;
+  setActiveOrders: (orders: Pedido[] | ((prev: Pedido[]) => Pedido[])) => void; // Añade soporte para función
   setActiveTrucks: (trucks: Camion[]) => void;
   setSelectedOrder: (order: Pedido | null) => void;
 }
