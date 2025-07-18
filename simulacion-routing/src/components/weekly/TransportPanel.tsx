@@ -11,7 +11,7 @@ export default function TransportPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [showVehicles, setShowVehicles] = useState(false);
   const { simTime } = useSimTime();
-  const { activeOrders, activeTrucks, setSelectedOrder } = useTransport();
+  const { activeOrders, activeTrucks, setSelectedOrder, setPedidosTotales, setPedidosEntregados } = useTransport();
   const [todosLosPedidos, setTodosLosPedidos] = useState<Pedido[]>([]);
   
   // Estado para pedidos
@@ -108,6 +108,12 @@ export default function TransportPanel() {
     : filteredPedidos.slice(indexOfFirstItem, indexOfLastItem);
     
   const totalItems = showVehicles ? filteredCamiones.length : filteredPedidos.length;
+  
+  useEffect(() => {
+    setPedidosTotales(totalItems);
+    setPedidosEntregados(activeOrders.filter(pedido => pedido.entregado).length);
+  }, [totalItems]);
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Funciones comunes

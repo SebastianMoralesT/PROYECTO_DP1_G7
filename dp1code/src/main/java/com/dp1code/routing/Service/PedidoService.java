@@ -74,6 +74,7 @@ public class PedidoService {
             while (rs.next()) {
                 Pedido pedido = new Pedido();
                 Nodo destino = new Nodo();
+                destino.setId(rs.getString("destino_id"));
                 destino.setPosX(rs.getInt("posX"));
                 destino.setPosY(rs.getInt("posY"));
                 pedido.setId(String.valueOf(rs.getInt("id")));
@@ -93,6 +94,52 @@ public class PedidoService {
         }
 
         return pedidos;
+    }
+
+    public boolean insertarPedido(PedidoDTO input) {
+        try (Connection conn = DatabaseService.getConnection()) {
+
+            // Obtener el Nodo por coordenadas
+            String sqlNodo = "SELECT id FROM prueba_camiones_diario.Nodo WHERE posX = ? AND posY = ?";
+            int nodoId = -1;
+
+            try (PreparedStatement psNodo = conn.prepareStatement(sqlNodo)) {
+                psNodo.setInt(1, input.getPosX());
+                psNodo.setInt(2, input.getPosY());
+                ResultSet rsNodo = psNodo.executeQuery();
+                if (rsNodo.next()) {
+                    nodoId = rsNodo.getInt("id");
+                } else {
+                    System.out.println("No se encontró nodo en (" + input.getPosX() + "," + input.getPosY() + ")");
+                    return false;
+                }
+            }
+
+            // Insertar pedido
+            String sqlPedido = "INSERT INTO prueba_camiones_diario.Pedido (destino_id, cantidadGlp, horaPedido, plazoMaximoEntrega, tiempoDescarga, entregado, cliente) "
+                    +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(sqlPedido)) {
+                LocalDateTime horaPedido = input.getHoraPedido().minusHours(5);
+                LocalDateTime plazoMax = input.getPlazoMaximoEntrega().minusHours(5);
+                LocalDateTime tiempoDescarga = plazoMax.plusMinutes(15);
+
+                ps.setInt(1, nodoId);
+                ps.setDouble(2, input.getCantidadGlp());
+                ps.setTimestamp(3, Timestamp.valueOf(horaPedido));
+                ps.setTimestamp(4, Timestamp.valueOf(plazoMax));
+                ps.setTimestamp(5, Timestamp.valueOf(tiempoDescarga));
+                ps.setBoolean(6, false);
+                ps.setString(7, input.getIdCliente());
+
+                int rows = ps.executeUpdate();
+                return rows > 0;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
     public boolean actualizarEstadoEntregadoPositivoDiaDia(String idPedido) {
         String sql = "UPDATE prueba_camiones_diario.Pedido SET entregado = ? WHERE id = ?";
@@ -173,7 +220,7 @@ public class PedidoService {
                 //Nodo destino = serviceNodo.getNodoPorId(id_destino); // Asegúrate que este método no sea estático o usa
                                                                    // una instancia
                 Nodo destino = new Nodo();
-                destino.setId(rs.getInt("NodoID"));
+                destino.setId(rs.getString("NodoID"));
                 destino.setPosX(rs.getInt("posX"));
                 destino.setPosY(rs.getInt("posY"));
                 destino.setBloqueado(rs.getBoolean("bloqueado"));

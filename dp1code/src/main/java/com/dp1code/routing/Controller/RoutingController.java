@@ -8,7 +8,9 @@ import com.dp1code.routing.Model.Camion;
 import com.dp1code.routing.Model.Bloqueo;
 import com.dp1code.routing.Model.Planta;
 import com.dp1code.routing.Model.Simulacion;
+import com.dp1code.routing.Service.PedidoService;
 import com.dp1code.routing.Service.RoutingService;
+import com.dp1code.routing.dto.PedidoDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 // Los imports de Spring Web:
@@ -25,6 +27,9 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 @CrossOrigin(origins = "https://h982equipo7g.duckdns.org")
 @RestController
@@ -107,6 +112,7 @@ public class RoutingController {
         return routingService.optimize(ahora);
     }*/
 
+    
     @PostMapping("/obtenerPedidos") 
     public ArrayList<Pedido> obtenerPedidos() throws IOException {
         LocalDateTime now = LocalDateTime.now()

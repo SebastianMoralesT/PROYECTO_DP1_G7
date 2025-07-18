@@ -1,20 +1,27 @@
-/*
 "use client";
 
 import { useState, useEffect } from "react";
 import { useSimTime } from "@/components/collapse/TimeContext";
+import { useTransport } from "@/components/collapse/TransportContext";
 
 export default function StatusBar() {
   const [tiempoReal, setTiempoReal] = useState<Date | null>(null);
   const [tiempoSimulacion, setTiempoSimulacion] = useState<Date | null>(null);
   const [vehiculos, setVehiculos] = useState(20);
-  const [pedidosEntregados, setPedidosEntregados] = useState({ entregados: 0, total: 3 });
+  const { activeOrders, activeTrucks, pedidosTotales, pedidosEntregados} = useTransport();
+  const [pedidos, setPedidos] = useState({ entregados: 0, total: 3 });
   const { simTime } = useSimTime();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+const fetchLoop = async () => {
+  setInterval(() => {
+    setPedidos({ entregados: activeOrders.length, total: 3 });
+  }, 1000)
+}
 
   useEffect(() => {
     const now = new Date();
@@ -67,8 +74,8 @@ export default function StatusBar() {
       </div>
       <div className="text-center">
         <span className="font-semibold">Ped. Entregados:</span>{" "}
-        {`${pedidosEntregados.entregados}/${pedidosEntregados.total}`}
+        {`${pedidosEntregados}/${pedidosTotales}`}
       </div>
     </div>
   );
-}*/
+}

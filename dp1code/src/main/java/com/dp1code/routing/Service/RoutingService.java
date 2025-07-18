@@ -181,7 +181,7 @@ public class RoutingService {
     }
 
     public static Solucion obtenerDiaDia(LocalDateTime fechaInput, LocalDateTime ahora, int cont) throws IOException {
-
+        
         PedidoService pedidoService = new PedidoService();
         CamionService camionService = new CamionService();
         PlantaService plantaService = new PlantaService();
@@ -221,7 +221,7 @@ public class RoutingService {
         cargarBloqueos("data/bloqueos.txt");
         ArrayList<Planta> plantas = plantaService.obtenerTodasDiaDia();
 
-        ArrayList<Camion> camiones = camionService.obtenerTodosLosCamionesDiaDia();
+        ArrayList<Camion> camiones = camionService.obtenerTodosLosCamionesDiaDia(grid);
         for (Camion c : camiones) {
             System.out.println("El camion ingresado es: " + c.getCodigo() + " y su ubi es: "
                     + c.getUbicacionActual().getPosX() + ", " + c.getUbicacionActual().getPosY()

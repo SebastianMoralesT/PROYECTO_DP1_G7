@@ -1,6 +1,7 @@
 package com.dp1code.routing.Service;
 
 import com.dp1code.routing.Model.Camion;
+import com.dp1code.routing.Model.Grid;
 import com.dp1code.routing.Model.Nodo;
 import com.dp1code.routing.dto.CamionDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -98,7 +99,7 @@ public class CamionService {
             throw new RuntimeException("Error al actualizar la ubicación del camión", e);
         }
     }
-    public ArrayList<Camion> obtenerTodosLosCamionesDiaDia() {
+    public ArrayList<Camion> obtenerTodosLosCamionesDiaDia(Grid grid) {
         ArrayList<Camion> camiones = new ArrayList<>();
         String sql = """
                 SELECT c.codigo, c.tipo, c.pesoVacio, c.ubicacionActual_id, c.capacidadMaxima,
@@ -122,12 +123,13 @@ public class CamionService {
                 camion.setDisponibleDesde(rs.getTimestamp("disponibleDesde").toLocalDateTime());
                 camion.setHoraLibre(rs.getTimestamp("horaLibre").toLocalDateTime());
 
-                int ubicacionId = rs.getInt("ubicacionActual_id");
+            
                 Nodo destino = new Nodo();
+                destino.setId(rs.getString("ubicacionActual_id"));
                 destino.setPosX(rs.getInt("posX"));
                 destino.setPosY(rs.getInt("posY"));
                 destino.setBloqueado(rs.getBoolean("bloqueado"));
-                camion.setUbicacionActual(destino);
+                camion.setUbicacionActual(grid.getNodoAt(destino.getPosX(), destino.getPosY()));
 
                 camiones.add(camion);
             }
@@ -143,7 +145,7 @@ public class CamionService {
         String sql = "UPDATE prueba_camiones_diario.Camion SET ubicacionActual_id = 581";
 
         try (Connection conn = DatabaseService.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {   
 
             int filasAfectadas = ps.executeUpdate();
             return filasAfectadas > 0;
@@ -274,8 +276,9 @@ public class CamionService {
                 camion.setDisponibleDesde(rs.getTimestamp("disponibleDesde").toLocalDateTime());
                 camion.setHoraLibre(rs.getTimestamp("horaLibre").toLocalDateTime());
 
-                int ubicacionId = rs.getInt("ubicacionActual_id");
+              
                 Nodo destino = new Nodo();
+                destino.setId(rs.getString("ubicacionActual_id"));
                 destino.setPosX(rs.getInt("posX"));
                 destino.setPosY(rs.getInt("posY"));
                 destino.setBloqueado(rs.getBoolean("bloqueado"));

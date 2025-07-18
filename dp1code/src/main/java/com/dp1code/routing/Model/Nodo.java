@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Nodo {
-    private int id;
+    private String id;
     private int posX;
     private int posY;
     private boolean bloqueado;
@@ -59,11 +59,11 @@ public class Nodo {
     public void setBloqueado(boolean bloqueado) {
         this.bloqueado = bloqueado;
     }
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 

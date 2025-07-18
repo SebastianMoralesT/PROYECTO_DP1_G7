@@ -3,6 +3,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { FiChevronRight, FiChevronLeft, FiX, FiPlus } from "react-icons/fi";
+import axios from "axios";
 
 export default function NewOrderPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,8 +16,8 @@ export default function NewOrderPanel() {
   });
 
   useEffect(() => {
-  console.log("NewOrderPanel montado");
-}, []);
+    console.log("NewOrderPanel montado");
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,10 +27,32 @@ export default function NewOrderPanel() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Lógica para enviar el nuevo pedido al backend
-    console.log("Nuevo pedido:", formData);
+
+    const ahora = new Date();
+    const horaPedido = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}T${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}:${String(ahora.getSeconds()).padStart(2, '0')}`;
+    const plazo = new Date(ahora.getTime() + parseInt(formData.tiempoMaximo) * 60 * 60 * 1000);
+
+    const plazoMaximo = `${plazo.getFullYear()}-${String(plazo.getMonth() + 1).padStart(2, '0')}-${String(plazo.getDate()).padStart(2, '0')}T${String(plazo.getHours()).padStart(2, '0')}:${String(plazo.getMinutes()).padStart(2, '0')}:${String(plazo.getSeconds()).padStart(2, '0')}`;
+
+
+    const payload = {
+      idCliente: formData.codigoCliente,
+      posX: parseInt(formData.posX),
+      posY: parseInt(formData.posY),
+      cantidadGlp: parseFloat(formData.cantidadGLP),
+      horaPedido: horaPedido,
+      plazoMaximoEntrega: plazoMaximo
+    };
+
+    try {
+      const response = await axios.post("http://localhost:8080/api/pedidos/registrarPedido", payload);
+      console.log("Pedido creado correctamente:", response.data);
+    } catch (error) {
+      console.error("Error al crear pedido:", error);
+    }
+
     // Limpiar formulario
     setFormData({
       codigoCliente: '',
@@ -42,9 +65,8 @@ export default function NewOrderPanel() {
 
   return (
     <>
-      {}
       {!isOpen && (
-        <button 
+        <button
           onClick={() => setIsOpen(true)}
           className="fixed left-16 top-1/4 transform -translate-y-1/2 bg-red-500 text-white p-2 rounded-r-lg shadow-lg z-30"
         >
@@ -52,14 +74,12 @@ export default function NewOrderPanel() {
         </button>
       )}
 
-     
       <div className={`fixed left-16 top-22 h-[calc(62vh-3rem)] bg-white border-r shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
-           style={{ width: '300px' }}>
+        style={{ width: '300px' }}>
         <div className="h-full flex flex-col">
-        
           <div className="bg-red-500 text-white p-3 flex justify-between items-center">
             <h3 className="font-semibold">Nuevo Pedido</h3>
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
               className="text-white hover:text-red-200"
             >
@@ -96,7 +116,7 @@ export default function NewOrderPanel() {
                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                     required
                     min="0"
-                    max="69"
+                    max="70"
                   />
                 </div>
                 <div>
@@ -111,7 +131,7 @@ export default function NewOrderPanel() {
                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                     required
                     min="0"
-                    max="49"
+                    max="50"
                   />
                 </div>
               </div>
@@ -132,7 +152,7 @@ export default function NewOrderPanel() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tiempo Máximo de Entrega
+                  Tiempo Máximo de Entrega (horas)
                 </label>
                 <input
                   type="number"
@@ -141,7 +161,7 @@ export default function NewOrderPanel() {
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                   required
-                  min="4"
+                  min="2"
                 />
               </div>
 

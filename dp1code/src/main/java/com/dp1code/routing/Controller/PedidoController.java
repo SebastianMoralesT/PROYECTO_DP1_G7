@@ -19,20 +19,18 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
-    @PostMapping("/registrar")
-    public String registrar(@RequestBody PedidoDTO pedidoDTO) {
-        pedidoService.registrarPedido(
-            Integer.parseInt(pedidoDTO.getId().replaceAll("\\D", "")), // convierte "PED-001" -> 1
-            pedidoDTO.getId(),
-            pedidoDTO.getCantidadGlp(),
-            pedidoDTO.getHoraPedido(),
-            pedidoDTO.getPlazoMaximoEntrega(),
-            pedidoDTO.getTiempoDescarga(),
-            pedidoDTO.getIdCliente(),
-            pedidoDTO.getDestinoId()
-        );
-        return "Pedido registrado correctamente.";
+    @PostMapping("/registrarPedido")
+    public ResponseEntity<String> insertarPedido(@RequestBody PedidoDTO input) {
+        PedidoService pedidoService = new PedidoService();
+        boolean resultado = pedidoService.insertarPedido(input);
+
+        if (resultado) {
+            return ResponseEntity.ok("Pedido insertado correctamente");
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al insertar pedido");
+        }
     }
+    
 
     @GetMapping("/rango")
     public List<Pedido> obtenerPedidosEnRango() {
