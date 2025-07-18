@@ -1,5 +1,5 @@
 // components/daily/NewOrderPanel.tsx
-/*
+
 "use client";
 import { useEffect, useState } from "react";
 import { FiChevronRight, FiChevronLeft, FiX, FiPlus } from "react-icons/fi";
@@ -160,4 +160,4 @@ export default function NewOrderPanel() {
       </div>
     </>
   );
-}*/
+}

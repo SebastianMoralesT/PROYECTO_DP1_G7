@@ -135,7 +135,7 @@ export default function TransportPanel() {
 
       {/* Panel principal */}
       <div className={`fixed right-0 top-12 h-190 bg-white border-l shadow-lg transition-transform duration-300 z-20 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-           style={{ width: '550px' }}>
+           style={{ width: '650px' }}>
         <div className="h-full flex flex-col">
           {/* Header */}
           <div className={`${showVehicles ? 'bg-red-500' : 'bg-red-500'} text-white p-2 flex justify-between items-center`}>
@@ -260,7 +260,8 @@ export default function TransportPanel() {
                         <th className="p-2">Cliente</th>
                         <th className="p-2">Paquete</th>
                         <th className="p-2">L. Entrega</th>
-                        <th className="p-2">F.H. Entrega</th>
+                        <th className="p-2">F.H. Pedido</th>
+                        <th className="p-2">F.H.Maximo</th>
                         <th className="p-2">Estado</th>
                         <th className="p-2">Ubicar</th>
                       </>
@@ -293,6 +294,7 @@ export default function TransportPanel() {
                           <td className="p-2">{(item as Pedido).idCliente}</td>
                           <td className="p-2">{(item as Pedido).cantidadGlp}</td>
                           <td className="p-2">({(item as Pedido).destino.posX} , {(item as Pedido).destino.posY})</td>
+                          <td className="p-2">{(item as Pedido).horaPedido}</td>
                           <td className="p-2">{(item as Pedido).plazoMaximoEntrega}</td>
                           <td className="p-2">
                             <span className={`px-2 py-1 rounded-full text-xs ${

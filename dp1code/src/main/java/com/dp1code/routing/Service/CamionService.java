@@ -48,6 +48,90 @@ public class CamionService {
         }
     }
 
+    public boolean actualizarGlpCargaTodosCamionDiaDia() {
+        String sql = "UPDATE prueba_camiones_diario.Camion SET glpActual = capacidadMaxima";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public boolean actualizarGlpTanqueTodosCamionDiaDia() {
+        String sql = "UPDATE prueba_camiones_diario.Camion SET glpTanque = 25";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+    public ArrayList<Camion> obtenerTodosLosCamionesDiaDia() {
+        ArrayList<Camion> camiones = new ArrayList<>();
+        String sql = """
+                SELECT c.codigo, c.tipo, c.pesoVacio, c.ubicacionActual_id, c.capacidadMaxima,
+                       c.glpActual, c.glpTanque, c.enRuta, c.disponibleDesde, c.horaLibre, n.*
+                FROM prueba_camiones_diario.Camion c INNER JOIN prueba_camiones_diario.Nodo n ON c.ubicacionActual_id = n.id
+                """;
+
+        try (Connection conn = DatabaseService.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Camion camion = new Camion();
+                camion.setCodigo(rs.getString("codigo"));
+                camion.setTipo(rs.getString("tipo"));
+                camion.setPesoVacio(rs.getDouble("pesoVacio"));
+                camion.setCapacidadMaxima(rs.getDouble("capacidadMaxima"));
+                camion.setGlpActual(rs.getDouble("glpActual"));
+                camion.setGlpTanque(rs.getDouble("glpTanque"));
+                camion.setEnRuta(rs.getBoolean("enRuta"));
+                camion.setDisponibleDesde(rs.getTimestamp("disponibleDesde").toLocalDateTime());
+                camion.setHoraLibre(rs.getTimestamp("horaLibre").toLocalDateTime());
+
+                int ubicacionId = rs.getInt("ubicacionActual_id");
+                Nodo destino = new Nodo();
+                destino.setPosX(rs.getInt("posX"));
+                destino.setPosY(rs.getInt("posY"));
+                destino.setBloqueado(rs.getBoolean("bloqueado"));
+                camion.setUbicacionActual(destino);
+
+                camiones.add(camion);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al obtener camiones:");
+            e.printStackTrace();
+        }
+
+        return camiones;
+    }
+    public boolean actualizarUbicacionTodosCamionDiaDia() {
+        String sql = "UPDATE prueba_camiones_diario.Camion SET ubicacionActual_id = 581";
+
+        try (Connection conn = DatabaseService.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
+
     public boolean actualizarUbicacionCamion(int posX, int posY, String codigoCamion) {
         String sql = "UPDATE prueba_camiones.Camion SET ubicacionActual_id = (SELECT id FROM prueba_camiones.Nodo WHERE posX= ? AND posY=?) WHERE codigo=?";
 

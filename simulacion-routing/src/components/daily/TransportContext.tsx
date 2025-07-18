@@ -8,7 +8,7 @@ interface TransportContextType {
   activeOrders: Pedido[];
   activeTrucks: Camion[];
   selectedOrder: Pedido | null;
-  setActiveOrders: (orders: Pedido[] | ((prev: Pedido[]) => Pedido[])) => void; // Añade soporte para función
+  setActiveOrders: (orders: Pedido[]) => void;
   setActiveTrucks: (trucks: Camion[]) => void;
   setSelectedOrder: (order: Pedido | null) => void;
 }

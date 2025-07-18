@@ -127,6 +127,7 @@ public class RoutingService {
         }
         System.out.println("La fecha Input que esta ingresando es: "+ fechaInput+" y la de ahora es: "+ ahora);
         ArrayList<Pedido> pedidos = pedidoService.obtenerPedidosAnteriores(fechaInput.minusSeconds(tiermpoSalto), ahora);
+        System.out.println("Los pedidos obtenidos son:  y son: "+pedidos.size()+ " desde fechaInput menos tiempoSalto: "+fechaInput.minusSeconds(tiermpoSalto)+" hasta ahora: "+ahora);
         for(Pedido p : pedidos){
             System.out.println("El pedido con id:"+p.getId()+" y glp: "+p.getCantidadGlp());
         }
@@ -156,6 +157,95 @@ public class RoutingService {
             
         //}).start();
         actualizarDatosBD(mejor,fechaSimulada, fechaSimulada.plusSeconds(tiermpoSalto), camiones, plantas);
+        //System.out.println("Se agrego una nueva solucion al arreglo");
+        //soluciones.add(mejor);
+        //fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
+      
+        return mejor;
+    }
+
+
+    public static Solucion obtenerDiaDia(LocalDateTime fechaInput, LocalDateTime ahora) throws IOException{
+    
+        PedidoService pedidoService = new PedidoService();
+        CamionService camionService = new CamionService();
+        PlantaService plantaService = new PlantaService();
+        boolean actualizado = true;
+        System.out.println("inicioooooooooooooooooooooooooooooooo de simulacion");
+        if(fechaInput.equals(ahora)){
+            System.out.println("INGRESOO A ACTUALIZAR DATOS");
+            actualizado = plantaService.actualizarTodasLasPlantasDiaDia();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion de todas las plantas.");
+            }
+            System.out.println("ACTUALIZOO PLANTAS");
+            actualizado = camionService.actualizarGlpCargaTodosCamionDiaDia();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Carga Camion.");
+            }
+            actualizado = camionService.actualizarGlpTanqueTodosCamionDiaDia();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Tanque Camion.");
+            }
+            actualizado = camionService.actualizarUbicacionTodosCamionDiaDia();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Ubi Camion.");
+            }
+            System.out.println("ACTUALIZOO CAMIONES");
+            actualizado = pedidoService.actualizarTodosPedidosANoEntregadosDiaDia();
+            if(!actualizado){
+                System.out.println("Ocurrio un error: Actualizacion Pedidos.");
+            }
+            System.out.println("TERMINO DE ACTUALIZAR DATOS.");
+        }
+        //ArrayList<Solucion> soluciones = new ArrayList<>();
+        LocalDateTime fechaSimulada = ahora;
+        
+        //Al inicio de la simulación.
+        cargarBloqueos("data/bloqueos.txt");
+        ArrayList<Planta> plantas = plantaService.obtenerTodasDiaDia();
+        
+        ArrayList<Camion> camiones = camionService.obtenerTodosLosCamionesDiaDia();
+        for(Camion c : camiones){
+            System.out.println("El camion ingresado es: "+c.getCodigo()+" y su ubi es: "+ c.getUbicacionActual().getPosX()+", "+c.getUbicacionActual().getPosY()+" y su glpTanque es: "+c.getGlpTanque()+" y su glpCarga es: "+c.getGlpActual());
+        }
+        System.out.println("La fecha Input que esta ingresando es: "+ fechaInput+" y la de ahora es: "+ ahora);
+        System.out.println("****************************** es fecha null ********************");
+        System.out.println("la fecha de entrada es: " + fechaInput + " y la fecha a comparar es: " + ahora);
+        ArrayList<Pedido> pedidos = pedidoService.obtenerPedidosConSiguienteEnRango(fechaInput.minusSeconds(tiermpoSalto), ahora);
+        LocalDateTime sigTime = pedidos.get(pedidos.size()-1).getHoraSiguientePedido();
+        
+        for(Pedido p : pedidos){
+            System.out.println("El pedido con id:"+p.getId()+" y glp: "+p.getCantidadGlp());
+            if(p.getHoraSiguientePedido()==null) System.out.println("****************************** es fecha null ********************");
+        }
+        
+        
+        //ArrayList<Camion> camionesBackup = deepCopyCamiones(camiones);
+        //ArrayList<Pedido> pedidosBackup = deepCopyPedidos(pedidosParaPlanificar);
+        //ArrayList<Planta> plantasBackup = deepCopyPlantas(plantas);
+
+        SimulatedAnnealing sa = new SimulatedAnnealing( 5000, 0.005, 100, plantas, camiones, pedidos, grid);
+        Solucion mejor = sa.optimize(fechaSimulada);
+        //pedidosNoEntregados = new ArrayList<>();
+        //pedidosNoEntregados = actualizarDatos(mejor, fechaSimulada.plusMinutes(tiermpoSalto), camiones, plantas);
+        for(PlanCamion p : mejor.getPlanesCamion()){
+                System.out.println("----RETORNOOOOOOO LA SOLUCION---------");
+                System.out.println("El camion: "+p.getCamion().getCodigo()+ " y su ubi: "+p.getCamion().getUbicacionActual().getPosX()+", "+p.getCamion().getUbicacionActual().getPosY());
+                for(SubRuta sub: p.getSubRutas()){
+                    System.out.println("El Inicio: "+ sub.getHoraInicio()+", ubi: "+sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY()+" y Fin: "+sub.getHoraFin()+", ubi: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY()+" y el size es: "+ sub.getTrayectoria().size());
+                    System.out.println("--");
+                    for(Nodo n: sub.getTrayectoria()){
+                        System.out.print("("+n.getPosX()+", "+n.getPosY()+"), ");
+                    }
+                    System.out.println("--");
+                }
+            }
+        //new Thread(() -> {
+            
+        //}).start();
+        System.out.println("LA FECHA DEL PEDIDO PRÖXIMO ES:" + sigTime);
+        actualizarDatosBD(mejor,fechaSimulada, sigTime, camiones, plantas);
         //System.out.println("Se agrego una nueva solucion al arreglo");
         //soluciones.add(mejor);
         //fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
@@ -325,12 +415,12 @@ public class RoutingService {
             if(plan.getSubRutas().size()!=0){
                 Camion c = new Camion();
                 
-                /*for(Camion camion: camiones){
+                for(Camion camion: camiones){
                     if (camion.getCodigo() == plan.getCamion().getCodigo()) {
                         c = camion;
                     }
 
-                }*/
+                }
             //Primero verifiquemos si ya termino la ultima subRuta de este plan.
             SubRuta last = plan.getSubRutas().get(plan.getSubRutas().size()-1);
             if(!last.getHoraFin().isAfter(fechaSimulada)){
@@ -407,7 +497,6 @@ public class RoutingService {
                     }
                     if(Utilidades.esPlantaPrincipal(sub.getTrayectoria().get(sub.getTrayectoria().size()-1), plantas)){
                         c.setGlpTanque(25);
-                        
                         c.setGlpActual(c.getCapacidadMaxima());
                         
                     }
@@ -427,8 +516,9 @@ public class RoutingService {
 
                         if (fechaSimulada.isAfter(tiempoParcial) && fechaSimulada.isBefore(tiempoParcialSiguiente)) {
                             double distancia = i;
-                            c.setUbicacionActual(sub.getTrayectoria().get(i));
                             
+                            System.out.println("Entrooo aquiiiiiiiiiiiiiiiiiiiiiiii y el camion: "+c.getCodigo()+" esta en la ubicacion: "+c.getUbicacionActual());
+                            c.setUbicacionActual(sub.getTrayectoria().get(i));
                             c.setGlpTanque(c.getGlpTanque() - c.calcularConsumo(distancia));
                             
                             

@@ -25,7 +25,9 @@ export interface Pedido {
   entregado: boolean;
   idCliente: string;
   estado?: string;  // Opcional si lo agregas después
-  canvasPosition?: { x: number; y: number; size: number }; 
+  canvasPosition?: { x: number; y: number; size: number };
+  horaSiguientePedido: string;
+  sigId: string | null;
 };
 
 
@@ -85,6 +87,25 @@ export async function obtenerSimulacionSemanal(fechaInicio: string, fechaVariabl
   }
 }
 
+export async function monitoreoDiario(fechaInicio: string, fechaVariable: string): Promise<Solucion> {
+  try {
+    const response = await fetch('http://localhost:8080/api/routing/monitoreoDiario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ahora: fechaInicio , fechaVariable: fechaVariable }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al obtener simulación:', error);
+    throw error;
+  }
+}
 
 
 

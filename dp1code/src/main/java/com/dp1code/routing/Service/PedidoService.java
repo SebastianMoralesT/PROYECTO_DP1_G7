@@ -41,6 +41,71 @@ public class PedidoService {
             throw new RuntimeException("Error al actualizar la ubicación del camión", e);
         }
     }
+    public ArrayList<Pedido> obtenerPedidosConSiguienteEnRango(LocalDateTime inicio, LocalDateTime fin) {
+        ArrayList<Pedido> pedidos = new ArrayList<>();
+
+        String sql = "WITH pedidos_con_siguiente AS ( " +
+                "  SELECT  " +
+                "    ped.id,  " +
+                "    ped.destino_id,  " +
+                "    ped.cantidadGlp,  " +
+                "    ped.horaPedido,  " +
+                "    ped.plazoMaximoEntrega,  " +
+                "    ped.tiempoDescarga,  " +
+                "    ped.entregado,  " +
+                "    LEAD(ped.horaPedido) OVER (ORDER BY ped.horaPedido) AS siguienteHoraPedido, " +
+                "    LEAD(ped.id) OVER (ORDER BY ped.horaPedido) AS siguienteId  " +
+                "  FROM  " +
+                "    prueba_camiones_diario.Pedido ped " +
+                ") " +
+                "SELECT * " +
+                "FROM pedidos_con_siguiente " +
+                "WHERE horaPedido >= ? AND horaPedido <= ? AND siguienteId IS NOT NULL;";
+
+        try (Connection conn = DatabaseService.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setTimestamp(1, Timestamp.valueOf(inicio));
+            ps.setTimestamp(2, Timestamp.valueOf(fin));
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Pedido pedido = new Pedido();
+                Nodo destino = new Nodo();
+                destino.setId(rs.getInt("destino_id"));
+                pedido.setId(String.valueOf(rs.getInt("id")));
+                pedido.setCantidadGlp(rs.getDouble("cantidadGlp"));
+                pedido.setHoraPedido(rs.getTimestamp("horaPedido").toLocalDateTime());
+                pedido.setPlazoMaximoEntrega(rs.getTimestamp("plazoMaximoEntrega").toLocalDateTime());
+                pedido.setTiempoDescarga(rs.getTimestamp("tiempoDescarga").toLocalDateTime());
+                pedido.setEntregado(rs.getBoolean("entregado"));
+                pedido.setHoraSiguientePedido(rs.getTimestamp("siguienteHoraPedido").toLocalDateTime());
+                pedido.setSigId(String.valueOf(rs.getInt("siguienteId")));
+                pedido.setDestino(destino);
+                pedidos.add(pedido);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return pedidos;
+    }
+    public boolean actualizarTodosPedidosANoEntregadosDiaDia() {
+        String sql = "UPDATE prueba_camiones_diario.Pedido SET entregado=0 WHERE entregado=1";
+
+        try (Connection conn = DatabaseService.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la ubicación del camión", e);
+        }
+    }
 
     public void actualizarPedidosJson(List<Pedido> pedidos) {
         String sql = "CALL prueba_camiones.actualizar_pedidos_json(?)";

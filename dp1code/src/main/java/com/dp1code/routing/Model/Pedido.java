@@ -12,6 +12,8 @@ public class Pedido {
     private LocalDateTime plazoMaximoEntrega;
     private LocalDateTime tiempoDescarga;
     private boolean entregado;
+    private LocalDateTime horaSiguientePedido;
+    private String sigId;
     public boolean isEntregado() {
         return entregado;
     }
@@ -54,6 +56,9 @@ public class Pedido {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
+    public String getSigId() { return sigId; }
+    public void setSigId(String sigId) { this.sigId = sigId; }
+
     public Nodo getDestino() { return destino; }
     public void setDestino(Nodo destino) { this.destino = destino; }
 
@@ -62,6 +67,9 @@ public class Pedido {
 
     public LocalDateTime getHoraPedido() { return horaPedido; }
     public void setHoraPedido(LocalDateTime horaPedido) { this.horaPedido = horaPedido; }
+
+    public LocalDateTime getHoraSiguientePedido() { return horaSiguientePedido; }
+    public void setHoraSiguientePedido(LocalDateTime horaSiguientePedido) { this.horaSiguientePedido = horaSiguientePedido; }
 
     public LocalDateTime getPlazoMaximoEntrega() { return plazoMaximoEntrega; }
     public void setPlazoMaximoEntrega(LocalDateTime plazoMaximoEntrega) { this.plazoMaximoEntrega = plazoMaximoEntrega; }

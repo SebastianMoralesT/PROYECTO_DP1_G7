@@ -1,14 +1,14 @@
- /*
-import SimulationMap from "@/components/collapse/SimulationMap";
-import Sidebar from "@/components/common/Sidebar";
-import StatusBar from "@/components/collapse/statusBar";
-import Legend from "@/components/common/Legend";
-import { TimeProvider } from "@/components/collapse/TimeContext";
+ 
+//import SimulationMap from "@/components/collapse/SimulationMap";
+//import Sidebar from "@/components/common/Sidebar";
+//import StatusBar from "@/components/collapse/statusBar";
+//import Legend from "@/components/common/Legend";
+//import { TimeProvider } from "@/components/collapse/TimeContext";
 
-import TransportPanel from "@/components/collapse/TransportPanel";
+//import TransportPanel from "@/components/collapse/TransportPanel";
 
 export default function Home() {
- 
+ /*
   return (
     <TimeProvider>
       <div className="flex h-screen bg-gray-100">
@@ -25,5 +25,5 @@ export default function Home() {
         </div>
       </div>
     </TimeProvider>
-  );
-}*/
+  );*/
+}

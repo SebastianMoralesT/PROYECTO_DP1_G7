@@ -65,6 +65,34 @@ public class RoutingController {
         }*/
         return solucion;
     }
+    @PostMapping("/monitoreoDiario")
+    public Solucion monitoreoDiario(@RequestBody Map<String, String> payload) throws IOException {
+        String ahoraStr = payload.get("ahora") + "Z";
+        String fechaVariableStr = payload.get("fechaVariable") + "Z";
+
+        Instant ahora = Instant.parse(ahoraStr);
+        Instant fechaVariable = Instant.parse(fechaVariableStr);
+        LocalDateTime ahoraLocal = LocalDateTime.ofInstant(ahora, ZoneOffset.UTC).minusHours(5);
+        LocalDateTime fechaVariableLocal = LocalDateTime.ofInstant(fechaVariable, ZoneOffset.UTC).minusHours(5);
+
+        System.out.println("Esta ingresando con la hora local de: "+ahoraLocal);
+        
+        Solucion solucion = routingService.obtenerDiaDia(ahoraLocal, fechaVariableLocal);
+        
+        
+
+        /* 
+        System.out.println("Se retorna: ");
+        for(Solucion s : simulacion.getSoluciones()) {
+            for(PlanCamion p: s.getPlanesCamion()) {
+                System.out.println("El camion: "+p.getCamion().getCodigo() + " y el size de subRutas es: "+p.getSubRutas().size());
+                for(SubRuta sub: p.getSubRutas()) {
+                    System.out.println(sub.getTrayectoria().get(0).getPosX()+", "+sub.getTrayectoria().get(0).getPosY() + " Fin: "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosX()+", "+sub.getTrayectoria().get(sub.getTrayectoria().size()-1).getPosY());
+                }
+            }
+        }*/
+        return solucion;
+    }
 
 /* 
     @PostMapping("/optimize")

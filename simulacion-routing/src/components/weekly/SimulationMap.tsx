@@ -49,6 +49,10 @@ export default function SimulationMap() {
   const selectedOrderRef = useRef<Pedido | null>(null);
   const lastSimTimeRef = useRef<Date | null>(null);
   const [simulationTrigger, setSimulationTrigger] = useState(0);
+  const maxDemoraRef = useRef<number>(0); // En milisegundos
+  const tiempoRealMaxRef = useRef<Date | null>(null);
+  const tiempoSimuladoMaxRef = useRef<Date | null>(null);
+  
 
 
   const [textoPedidos, setTextoPedidos] = useState<string>("");
@@ -175,21 +179,30 @@ export default function SimulationMap() {
     while (!cancelado) {
       try {
         const isoStr = fechaActual.toISOString().replace("Z", "");
-        console.log("La nueva fecha es:", isoStr);
+        
         const start = Date.now();
         
         const [solucion] = await Promise.all([
           obtenerSimulacionSemanal(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr)
         ]);
-        console.log("La solucion obtenida con la nueva fecha:" + isoStr + " es: " + solucion.planesCamion.map(plan => plan.subRutas.map(subR => subR.trayectoria.map(tray => tray.posX + " " + tray.posY))));
+        //console.log("La solucion obtenida con la nueva fecha:" + isoStr + " es: " + solucion.planesCamion.map(plan => plan.subRutas.map(subR => subR.trayectoria.map(tray => tray.posX + " " + tray.posY))));
         setlistSolucion(prev => [...prev, solucion]);
+        console.log("NUEVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
         
-        fechaActual = new Date(fechaActual.getTime() + 6 * 60 * 1000 + 40 * 1000); // 6 min 40 s simulados
         //await new Promise(resolve => setTimeout(resolve, 0));
         const elapsed = Date.now() - start;
-        await new Promise((resolve) =>
-          setTimeout(resolve, 0)  // Espera 90 segundos
-        );
+       
+        if (elapsed > maxDemoraRef.current) {
+          //console.log(`⏱️ Nueva demora máxima detectada: ${elapsed} ms`);
+          maxDemoraRef.current = elapsed;
+          tiempoRealMaxRef.current = new Date(); // El momento real en que terminó la solicitud
+          tiempoSimuladoMaxRef.current = new Date(fechaActual); // Fecha simulada usada para obtener la solución
+          
+        }
+        fechaActual = new Date(fechaActual.getTime() + 6 * 60 * 1000 + 40 * 1000); // 6 min 40 s simulados
+        console.log(`🕒 Demora máxima: ${elapsed} ms`);
+        console.log(`🟢 Tiempo real: ${tiempoRealMaxRef.current?.toISOString()}`);
+        console.log(`🔵 Tiempo simulado: ${tiempoSimuladoMaxRef.current?.toISOString()}`);
       } catch (error) {
         console.error("Error al obtener solución:", error);
         break;
@@ -206,64 +219,70 @@ export default function SimulationMap() {
   }, [simulationTrigger]);
 
   const indiceRef = useRef(0);
-
+   const contadorRef = useRef(0);
+   const banderaRef = useRef(true);
 
   useEffect(() => {
-    if (listSolucion.length === 0) return;
-    console.log("INGRESOOOOOO AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIII");
-    const intervalo = setInterval(() => {
-      if (!fechaInicioRef.current) return;
-      let contador = 0;
-      const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
-      // Si ya pasamos el siguiente umbral de actualización
-      if (transcurridoMs % (6 * 60 * 1000 + 40 * 1000) == 0) {//************************************** */
-        console.log("Los transcurridosMs son: "+ transcurridoMs+ " y la fecha actual es: "+ simTimeRef.current+" y la fecha inicio es: "+ fechaInicioRef.current+" y la fecha real es: "+ Date.now());
-        console.log("Y el indice es: "+ indiceRef.current);
-        const sol = listSolucion[indiceRef.current];
-        if (!sol) return;
-        console.log("La solucion obtenida es: " + sol.costo+ " y los pedidos son: "+ sol.planesCamion.flatMap(plan => plan.subRutas.map(subR => subR.pedido?.id)));
-        
+  if (listSolucion.length === 0) return;
 
-        indiceRef.current += 1;
+  const intervaloSimulado = 6 * 60 * 1000 + 40 * 1000; // 400000 ms simulados
 
-        console.log("Actualizando con índice:", indiceRef.current - 1);
-        console.log("TranscurridosMs:", transcurridoMs);
-        console.log("Longitud de listSolucion:", listSolucion.length);
+  let lastIndiceProcesado = -1;
+   // Este valor solo vive dentro del efecto
 
-        const activeTrucks = sol.planesCamion.map(plan => plan.camion);
-        const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
-        const activeOrders = sol.planesCamion.flatMap(plan =>
-          plan.subRutas
-            .filter(subRuta => subRuta.pedido)
-            .map(subRuta => subRuta.pedido)
-        ).filter(pedido => pedido) as Pedido[];
+  const intervalo = setInterval(() => {
+    if (!fechaInicioRef.current) return;
 
-        setTextoPedidos(
-          activeOrders.map(p => `Pedido ${p.id} en (${p.destino.posX}, ${p.destino.posY}) HoraP:${p.horaPedido} y entregado: ${p.entregado}`).join("\n")
-        );
+    const simTime = simTimeRef.current;
+    const transcurridoMs = simTime.getTime() - fechaInicioRef.current.getTime();
+    const indiceCalculado = Math.floor(transcurridoMs / intervaloSimulado);
+   // console.log("Indice antiguo:", lastIndiceProcesado+" y indice.RefCurrent:"+ indiceRef.current+" y el indice Calculado es: "+ indiceCalculado);
+    // ✅ Solo procesar si se avanzó a un nuevo bloque
+    if (indiceCalculado > lastIndiceProcesado && (indiceCalculado!==indiceRef.current || indiceRef.current===0)) {
+      console.log("✅ Actualizando índice:", indiceRef.current, "en SimTime:", simTimeRef.current.toISOString());
+      lastIndiceProcesado = indiceCalculado;
+      indiceRef.current = indiceCalculado;
 
-        setTextoSubRutas(
-          activeRoutes.map(subRuta =>
-            subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
-          ).join("\n\n")
-        );
+      const sol = listSolucion[indiceRef.current];
+      if (!sol) return;
 
-        setTrucks(activeTrucks);
-        setRoutes(activeRoutes);
-        setOrders(activeOrders);
-        setActiveOrders(activeOrders);
-        setActiveTrucks(activeTrucks);
+      console.log("✅ Actualizando índice:", indiceRef.current, "en SimTime:", simTime.toISOString());
 
-        contador++;
-        if(contador==1){
-          startSimulation();
-          startAnimation();
-        }
+      const activeTrucks = sol.planesCamion.map(plan => plan.camion);
+      const activeRoutes = sol.planesCamion.map(plan => plan.subRutas);
+      const activeOrders = sol.planesCamion.flatMap(plan =>
+        plan.subRutas
+          .filter(subRuta => subRuta.pedido)
+          .map(subRuta => subRuta.pedido)
+      ).filter(pedido => pedido) as Pedido[];
+
+      setTextoPedidos(
+        activeOrders.map(p => `Pedido ${p.id} en (${p.destino.posX}, ${p.destino.posY}) HoraP:${p.horaPedido} y entregado: ${p.entregado}`).join("\n")
+      );
+
+      setTextoSubRutas(
+        activeRoutes.map(subRuta =>
+          subRuta.map(r => `Inicio: ${r.horaInicio} (${r.inicio.posX},${r.inicio.posY}) → (${r.fin.posX},${r.fin.posY}) ${r.horaFin}`).join("\n")
+        ).join("\n\n")
+      );
+
+      setTrucks(activeTrucks);
+      setRoutes(activeRoutes);
+      setOrders(activeOrders);
+      setActiveOrders(activeOrders);
+      setActiveTrucks(activeTrucks);
+
+      contadorRef.current += 1;
+      if (contadorRef.current === 1) {
+        startSimulation();
+        startAnimation();
       }
-    }, 30);//************************************** */
+    }
+  }, 30); // Evaluar cada 40ms reales, pero solo ejecutar si hay cambio de bloque
 
-    return () => clearInterval(intervalo);
-  }, [listSolucion]);
+  return () => clearInterval(intervalo);
+}, [listSolucion]);
+
 
 
 
@@ -309,22 +328,29 @@ export default function SimulationMap() {
   }, []);
 
   useEffect(() => {
-    if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
+  if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
 
-    trucksProgressRef.current = routes.map((subRutas, index) => {
-      const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
-      const firstRoute = subRutas[0]?.trayectoria || [];
+  trucksProgressRef.current = routes.map((subRutas) => {
+    const fullRoute = subRutas.flatMap(sr => sr.trayectoria);
+    if (fullRoute.length < 2) {
+      const only = fullRoute[0] || { posX: 0, posY: 0 };
       return {
         currentStep: 0,
         progress: 0,
-        currentPos: [initialPos.posX, initialPos.posY],
-        targetPos: firstRoute.length > 0
-          ? [firstRoute[0].posX, firstRoute[0].posY]
-          : [initialPos.posX, initialPos.posY]
+        currentPos: [only.posX, only.posY],
+        targetPos: [only.posX, only.posY]
       };
-    });
+    }
 
-  }, [trucks, routes]);
+    return {
+      currentStep: 0,
+      progress: 0,
+      currentPos: [fullRoute[0].posX, fullRoute[0].posY],
+      targetPos: [fullRoute[1].posX, fullRoute[1].posY]
+    };
+  });
+}, [trucks, routes]);
+
   useEffect(() => {
 
     drawInitialState();
@@ -706,7 +732,10 @@ export default function SimulationMap() {
 
       if (progressData.currentStep >= fullRoute.length - 1) {
         const lastPos = fullRoute[fullRoute.length - 1] || { posX: 0, posY: 0 };
-        progressData.currentPos = [lastPos.posX, lastPos.posY];
+        progressData.currentPos = [lastPos.posX, lastPos.posY]
+        
+
+
         drawTruck(ctx, progressData.currentPos[0], progressData.currentPos[1], truck, spacing, progressData.currentPos, progressData.currentPos, true);
         return;
       }
@@ -733,6 +762,27 @@ export default function SimulationMap() {
         progressData.currentPos = [currentStep.posX, currentStep.posY];
         progressData.targetPos = [nextStep.posX, nextStep.posY];
       }
+      // Verifica si el currentPos coincide con el final de alguna subRuta
+      rutasVisibles.forEach(subRuta => {
+        const ultimaUbicacion = subRuta.trayectoria[subRuta.trayectoria.length - 1];
+        if (
+          progressData.currentPos[0] === ultimaUbicacion.posX &&
+          progressData.currentPos[1] === ultimaUbicacion.posY &&
+          subRuta.pedido
+        ) {
+          console.log(`✅ Pedido entregado: ${subRuta.pedido.id}`);
+          setActiveOrders(prevOrders => 
+            prevOrders.map(order => 
+              order.id === subRuta.pedido?.id 
+                ? { ...order, entregado: true } 
+                : order
+            )
+          );
+          // Aquí puedes cambiar el estado del pedido, emitir un evento, etc.
+          subRuta.pedido = null; // O una propiedad tipo subRuta.entregado = true;
+        }
+      });
+
 
       const t = Math.min(progressData.progress / tiempoEntreNodosSegundos, 1);
       const interpolatedX = progressData.currentPos[0] + (progressData.targetPos[0] - progressData.currentPos[0]) * t;
