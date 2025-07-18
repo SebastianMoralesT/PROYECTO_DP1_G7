@@ -58,8 +58,9 @@ public class PedidoService {
                 "  FROM  " +
                 "    prueba_camiones_diario.Pedido ped " +
                 ") " +
-                "SELECT * " +
-                "FROM pedidos_con_siguiente " +
+                "SELECT ps.*, n.posX, n.posY " +
+                "FROM pedidos_con_siguiente ps " +
+                "INNER JOIN prueba_camiones_diario.Nodo n ON ps.destino_id = n.id "+
                 "WHERE horaPedido >= ? AND horaPedido <= ? AND siguienteId IS NOT NULL;";
 
         try (Connection conn = DatabaseService.getConnection();
@@ -73,7 +74,8 @@ public class PedidoService {
             while (rs.next()) {
                 Pedido pedido = new Pedido();
                 Nodo destino = new Nodo();
-                destino.setId(rs.getInt("destino_id"));
+                destino.setPosX(rs.getInt("posX"));
+                destino.setPosY(rs.getInt("posY"));
                 pedido.setId(String.valueOf(rs.getInt("id")));
                 pedido.setCantidadGlp(rs.getDouble("cantidadGlp"));
                 pedido.setHoraPedido(rs.getTimestamp("horaPedido").toLocalDateTime());

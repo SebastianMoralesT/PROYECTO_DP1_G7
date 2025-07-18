@@ -87,12 +87,12 @@ export async function obtenerSimulacionSemanal(fechaInicio: string, fechaVariabl
   }
 }
 
-export async function monitoreoDiario(fechaInicio: string, fechaVariable: string): Promise<Solucion> {
+export async function monitoreoDiario(fechaInicio: string, fechaVariable: string, cont: number): Promise<Solucion> {
   try {
     const response = await fetch('http://localhost:8080/api/routing/monitoreoDiario', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ahora: fechaInicio , fechaVariable: fechaVariable }),
+      body: JSON.stringify({ ahora: fechaInicio , fechaVariable: fechaVariable, cont: cont}),
     });
 
     if (!response.ok) {

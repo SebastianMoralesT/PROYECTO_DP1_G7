@@ -181,12 +181,13 @@ export default function SimulationMap() {
     
     const ejecutarLoop = async () => {
       try {
-        console.log("FECHA PROXIMA: " + fechaProxima.current + " FECHA INIcIO: " + fechaInicioRef.current + "FECHA ACTUAL: " + simTimeRef.current);
+        //console.log("FECHA PROXIMA: " + fechaProxima.current + " FECHA INIcIO: " + fechaInicioRef.current + "FECHA ACTUAL: " + simTimeRef.current);
         //********************************** */
         if (
           cont.current === 0 ||
-          (fechaProxima.current && simTimeRef.current.getTime() === fechaProxima.current.getTime())
+          (fechaProxima.current && Math.floor(simTimeRef.current.getTime() / 1000) === Math.floor(fechaProxima.current.getTime() / 1000))
         ) {
+          console.log("Ingresooo")
           /*if (cont.current === 0) {
             // Establece la próxima fecha esperada 2h más adelante (en tiempo simulado)
             fechaProxima.current = new Date(fechaInicioRef.current.getTime() + 2 * 60 * 60 * 1000);
@@ -199,7 +200,7 @@ export default function SimulationMap() {
           //const start = Date.now();
           //console.log("FECHA PROXIMA: " + fechaProxima.current?.getTime().toString() + " FECHA INIcIO: " + fechaInicioRef.current + "FECHA ACTUAL: " + simTime);
           const [solucion] = await Promise.all([
-            monitoreoDiario(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr)
+            monitoreoDiario(fechaInicioRef.current.toISOString().replace("Z", ""), isoStr, cont.current)
           ]);
           const pedidosObtenidos = solucion.planesCamion.flatMap(plan =>
             plan.subRutas
@@ -263,24 +264,18 @@ export default function SimulationMap() {
   useEffect(() => {
     if (listSolucion.length === 0) return;
 
-    const intervaloSimulado = 6 * 60 * 1000 + 40 * 1000; // 400000 ms simulados
-
-    let lastIndiceProcesado = -1;
     // Este valor solo vive dentro del efecto
     let cont = 0;
     const intervalo = setInterval(() => {
       if (!fechaInicioRef.current) return;
-
-      const simTime = simTimeRef.current;
-      const transcurridoMs = simTimeRef.current.getTime() - fechaInicioRef.current.getTime();
-      const indiceCalculado = Math.floor(transcurridoMs / intervaloSimulado);
+      
       //********console.log("Indice antiguo:", lastIndiceProcesado + " y indice.RefCurrent:" + indiceRef.current + " y el indice Calculado es: " + indiceCalculado);
       // ✅ Solo procesar si se avanzó a un nuevo bloque
       //if (indiceCalculado > lastIndiceProcesado && (indiceCalculado !== indiceRef.current || indiceRef.current === 0)) {
-      if (cont == 0 || (fechaProxima.current && simTimeRef.current.getTime() === fechaProxima.current.getTime())) {
-        //console.log("✅ Actualizando índice:", indiceRef.current, "en SimTime:", simTime.toISOString());
-        lastIndiceProcesado = indiceCalculado;
-        indiceRef.current = indiceCalculado;
+      console.log("La fecha Proxima es: "+ fechaProxima.current + " y la SimTime es: " + simTimeRef.current);
+      if (cont == 0 || (fechaProxima.current && Math.floor(simTimeRef.current.getTime() / 1000) === Math.floor(fechaProxima.current.getTime() / 1000))) {
+        console.log("✅ Actualizando índice:", indiceRef.current, "en SimTime:", simTimeRef.current.toISOString());
+
 
         const sol = listSolucion[indiceRef.current];
         if (!sol) return;
@@ -317,6 +312,7 @@ export default function SimulationMap() {
           startAnimation();
         }
         cont = 1;
+        indiceRef.current++;
       }
     }, 1000); // Evaluar cada 40ms reales, pero solo ejecutar si hay cambio de bloque
 
@@ -384,18 +380,25 @@ export default function SimulationMap() {
   useEffect(() => {
     if (!Object.values(imagesLoaded).every(Boolean) || loading) return;
 
-    trucksProgressRef.current = routes.map((subRutas, index) => {
-      const initialPos = trucks[index]?.ubicacionActual || { posX: 0, posY: 0 };
-      const firstRoute = subRutas[0]?.trayectoria || [];
+    trucksProgressRef.current = routes.map((subRutas) => {
+    const fullRoute = subRutas.flatMap(sr => sr.trayectoria);
+    if (fullRoute.length < 2) {
+      const only = fullRoute[0] || { posX: 0, posY: 0 };
       return {
         currentStep: 0,
         progress: 0,
-        currentPos: [initialPos.posX, initialPos.posY],
-        targetPos: firstRoute.length > 0
-          ? [firstRoute[0].posX, firstRoute[0].posY]
-          : [initialPos.posX, initialPos.posY]
+        currentPos: [only.posX, only.posY],
+        targetPos: [only.posX, only.posY]
       };
-    });
+    }
+
+    return {
+      currentStep: 0,
+      progress: 0,
+      currentPos: [fullRoute[0].posX, fullRoute[0].posY],
+      targetPos: [fullRoute[1].posX, fullRoute[1].posY]
+    };
+  });
 
   }, [trucks, routes]);
   useEffect(() => {
@@ -806,6 +809,27 @@ export default function SimulationMap() {
         progressData.currentPos = [currentStep.posX, currentStep.posY];
         progressData.targetPos = [nextStep.posX, nextStep.posY];
       }
+
+      // Verifica si el currentPos coincide con el final de alguna subRuta
+      rutasVisibles.forEach(subRuta => {
+        const ultimaUbicacion = subRuta.trayectoria[subRuta.trayectoria.length - 1];
+        if (
+          progressData.currentPos[0] === ultimaUbicacion.posX &&
+          progressData.currentPos[1] === ultimaUbicacion.posY &&
+          subRuta.pedido
+        ) {
+          console.log(`✅ Pedido entregado: ${subRuta.pedido.id}`);
+          setActiveOrders(prevOrders => 
+            prevOrders.map(order => 
+              order.id === subRuta.pedido?.id 
+                ? { ...order, entregado: true } 
+                : order
+            )
+          );
+          // Aquí puedes cambiar el estado del pedido, emitir un evento, etc.
+          subRuta.pedido = null; // O una propiedad tipo subRuta.entregado = true;
+        }
+      });
 
       const t = Math.min(progressData.progress / tiempoEntreNodosSegundos, 1);
       const interpolatedX = progressData.currentPos[0] + (progressData.targetPos[0] - progressData.currentPos[0]) * t;

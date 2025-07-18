@@ -69,6 +69,7 @@ public class RoutingController {
     public Solucion monitoreoDiario(@RequestBody Map<String, String> payload) throws IOException {
         String ahoraStr = payload.get("ahora") + "Z";
         String fechaVariableStr = payload.get("fechaVariable") + "Z";
+        int cont = Integer.parseInt(payload.get("cont"));
 
         Instant ahora = Instant.parse(ahoraStr);
         Instant fechaVariable = Instant.parse(fechaVariableStr);
@@ -77,7 +78,7 @@ public class RoutingController {
 
         System.out.println("Esta ingresando con la hora local de: "+ahoraLocal);
         
-        Solucion solucion = routingService.obtenerDiaDia(ahoraLocal, fechaVariableLocal);
+        Solucion solucion = routingService.obtenerDiaDia(ahoraLocal, fechaVariableLocal, cont);
         
         
 

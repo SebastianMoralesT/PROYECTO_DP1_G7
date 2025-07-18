@@ -57,7 +57,32 @@ public class NodoService {
             e.printStackTrace();
         }
     }
+    public static Nodo getNodoPorIdDiaDia(int id) {
+        String sql = "SELECT posX, posY, bloqueado FROM prueba_camiones_diario.Nodo WHERE id = ?";
 
+        try (
+                Connection conn = DatabaseService.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+                    System.out.println("INSTANCIA 1");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+                    System.out.println("INSTANCIA 2");
+            if (rs.next()) {
+                Nodo nodo = new Nodo();
+                nodo.setPosX(rs.getInt("posX"));
+                nodo.setPosY(rs.getInt("posY"));
+                nodo.setBloqueado(rs.getBoolean("bloqueado"));
+                System.out.println("INSTANCIA 3");
+                return nodo;
+                
+            } else {
+                throw new RuntimeException("Nodo no encontrado con id: " + id);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al consultar nodo con id: " + id, e);
+        }
+    }
     public Nodo getNodoPorId(int id) {
         String sql = "SELECT posX, posY, bloqueado FROM prueba_camiones.Nodo WHERE id = ?";
 

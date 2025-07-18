@@ -48,10 +48,10 @@ public class CamionService {
         }
     }
     public boolean actualizarCamionesBatchDiaADia(List<Camion> camiones, Connection conn) {
-        String sql = "UPDATE prueba_camiones.Camion SET " +
+        String sql = "UPDATE prueba_camiones_diario.Camion SET " +
                     "glpTanque = ?, " +
                     "glpActual = ?, " +
-                    "ubicacionActual_id = (SELECT id FROM prueba_camiones.Nodo WHERE posX = ? AND posY = ?) " +
+                    "ubicacionActual_id = (SELECT id FROM prueba_camiones_diario.Nodo WHERE posX = ? AND posY = ?) " +
                     "WHERE codigo = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
