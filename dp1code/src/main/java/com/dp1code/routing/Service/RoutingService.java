@@ -172,7 +172,12 @@ public class RoutingService {
         // new Thread(() -> {
 
         // }).start();
-        actualizarDatosBD(mejor, fechaSimulada, fechaSimulada.plusSeconds(tiermpoSalto), camiones, plantas);
+        actualizarDatosBD(mejor, fechaSimulada, fechaSimulada.plusSeconds(tiermpoSalto), camiones, plantas, pedidos);
+        for(Pedido p: pedidos){
+            if(p.getPlazoMaximoEntrega().isBefore(fechaSimulada.plusSeconds(tiermpoSalto)) && !p.isEntregado()){
+                System.out.println("Colapso a las: "+ fechaSimulada.plusSeconds(tiermpoSalto)+" y con el pedido: "+p.getId());
+            }
+        }
         // System.out.println("Se agrego una nueva solucion al arreglo");
         // soluciones.add(mejor);
         // fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
@@ -273,6 +278,11 @@ public class RoutingService {
         // }).start();
         System.out.println("LA FECHA DEL PEDIDO PRÖXIMO ES:" + sigTime);
         actualizarDatosBDDiaADia(mejor, fechaSimulada, sigTime, camiones, plantas);
+        for(Pedido p: pedidos){
+            if(p.getPlazoMaximoEntrega().isBefore(sigTime) && !p.isEntregado()){
+                System.out.println("Colapso a las: "+ sigTime+" y con el pedido: "+p.getId());
+            }
+        }
         // System.out.println("Se agrego una nueva solucion al arreglo");
         // soluciones.add(mejor);
         // fechaSimulada = fechaSimulada.plusMinutes(tiermpoSalto);
@@ -437,7 +447,7 @@ public class RoutingService {
         return pedidosNoEntregados;
     }
 
-    private static void actualizarDatosBD(Solucion solucion, LocalDateTime fechaSimuladaAnterior, LocalDateTime fechaSimulada, ArrayList<Camion> camiones, ArrayList<Planta> plantas) {
+    private static void actualizarDatosBD(Solucion solucion, LocalDateTime fechaSimuladaAnterior, LocalDateTime fechaSimulada, ArrayList<Camion> camiones, ArrayList<Planta> plantas, ArrayList<Pedido> pedidos) {
         CamionService camionService = new CamionService();
         PedidoService pedidoService = new PedidoService();
         PlantaService plantaService = new PlantaService();
@@ -473,6 +483,7 @@ public class RoutingService {
                             }
                             System.out.println("Se entrego el pedido: " + sub.getPedido().getId() + " con carga de "
                                     + sub.getPedido().getCantidadGlp());
+                            
                         }
                         if (Utilidades.esPlantaSecundaria(sub.getTrayectoria().get(sub.getTrayectoria().size() - 1),
                                 plantas)) {
@@ -583,6 +594,8 @@ public class RoutingService {
             }
         }
 
+        
+
         LocalDateTime inicioBD = LocalDateTime.now();
         System.out.println("COMENZOOOOOOO CON LA BD:");
         actualizado = true;
@@ -607,6 +620,8 @@ public class RoutingService {
         System.out.println("Tiempo en actualizar BD: " + duracion.toMillis() + " ms");
         System.out.println("TERMINOOOO DE ACTUALIZAR LA BD");
     }
+
+    
 
     private static void actualizarDatosBDDiaADia(Solucion solucion, LocalDateTime fechaSimuladaAnterior,
             LocalDateTime fechaSimulada, ArrayList<Camion> camiones, ArrayList<Planta> plantas) {

@@ -86,6 +86,9 @@ public class PedidoService {
                 pedido.setHoraSiguientePedido(rs.getTimestamp("siguienteHoraPedido").toLocalDateTime());
                 pedido.setSigId(String.valueOf(rs.getInt("siguienteId")));
                 pedido.setDestino(destino);
+                for(Pedido p : pedidos){
+                    System.out.println("El pedido: " + p.getId() + " tiene como siguiente: " + p.getSigId());
+                }
                 pedidos.add(pedido);
             }
 
